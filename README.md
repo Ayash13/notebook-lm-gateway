@@ -36,9 +36,10 @@
 │       │          ┌──────────────┐               │            │
 │       ├─────────▶│  SQLite DB   │               ▼            │
 │       │          │  gateway.db  │        ┌─────────────┐     │
-│       │          └──────────────┘        │ NotebookLM  │     │
-│       │                                  │ (google.com)│     │
-│       │          ┌──────────────┐        └─────────────┘     │
+│       │          │(Hist & Profs)│        │ NotebookLM  │     │
+│       │          └──────────────┘        │ (google.com)│     │
+│       │                                  └─────────────┘     │
+│       │          ┌──────────────┐                            │
 │       └─────────▶│  Static UI   │                            │
 │                  │  public/     │                            │
 │                  └──────────────┘                            │
@@ -54,12 +55,14 @@
 ### Request Flow
 
 ```
-1. Client sends POST /api/ask { query: "..." }
-2. Middleware assigns/reads nlm_uid cookie → device identity
-3. Server finds or creates a Playwright page for this device
-4. Query is filled into NotebookLM's textarea, submitted
-5. Server waits for response, parses HTML → text + markdown
-6. Response stored in SQLite, returned as JSON
+1. Client sends POST /api/notebook to select a target NotebookLM URL (Profile).
+2. Server saves the preference to SQLite and asynchronously pre-warms a Playwright page.
+3. Client sends POST /api/ask { query: "..." }
+4. Middleware reads the `nlm_uid` cookie to identify the client device.
+5. Server fetches the client's active notebook preference from SQLite and assigns a Playwright page.
+6. Query is typed into the NotebookLM textarea and submitted.
+7. Server waits for the response, parsing the DOM into clean Text + Markdown.
+8. Conversation is saved to SQLite and returned as JSON.
 ```
 
 ---
