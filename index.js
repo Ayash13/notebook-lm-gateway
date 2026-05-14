@@ -30,6 +30,11 @@ db.exec(`
     CREATE TABLE IF NOT EXISTS user_preferences (
         ip TEXT PRIMARY KEY, notebook TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS saved_notebooks (
+        ip TEXT NOT NULL, url TEXT NOT NULL, title TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (ip, url)
+    );
 `);
 
 const stmtInsert = db.prepare(`INSERT INTO conversations (ip, notebook, query) VALUES (?, ?, ?)`);
@@ -39,6 +44,10 @@ const stmtHistory = db.prepare(`SELECT id,query,response,markdown,status,duratio
 const stmtAll = db.prepare(`SELECT id,ip,notebook,query,response,status,duration_ms,created_at FROM conversations ORDER BY created_at DESC LIMIT ?`);
 const stmtGetPref = db.prepare(`SELECT notebook FROM user_preferences WHERE ip=?`);
 const stmtSetPref = db.prepare(`INSERT INTO user_preferences (ip, notebook) VALUES (?, ?) ON CONFLICT(ip) DO UPDATE SET notebook=excluded.notebook`);
+const stmtGetNbs = db.prepare(`SELECT url, title FROM saved_notebooks WHERE ip=? ORDER BY created_at DESC`);
+const stmtSaveNb = db.prepare(`INSERT INTO saved_notebooks (ip, url, title) VALUES (?, ?, ?) ON CONFLICT(ip, url) DO UPDATE SET title=excluded.title`);
+const stmtDeleteNb = db.prepare(`DELETE FROM saved_notebooks WHERE ip=? AND url=?`);
+const stmtGetAnyNb = db.prepare(`SELECT DISTINCT url, title FROM saved_notebooks LIMIT 2`);
 
 // --- Globals ---
 const crypto = require('crypto');
@@ -59,10 +68,25 @@ app.use((req, res, next) => {
 
 // --- Session ---
 async function createPage(notebookUrl) {
-    const page = await context.newPage();
-    await page.goto(notebookUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-    await page.waitForSelector('textarea.query-box-input', { timeout: 60_000 });
-    return page;
+    try {
+        const page = await context.newPage();
+        await page.goto(notebookUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+        await page.waitForSelector('textarea.query-box-input', { timeout: 60_000 });
+        const title = await page.textContent('.title-label-inner').catch(() => null) || 'Unknown Notebook';
+        return { page, title };
+    } catch (e) {
+        if (e.message.includes('browser has been closed') || e.message.includes('Target page, context or browser has been closed')) {
+            console.error('[playwright crash] Rebooting browser...');
+            await boot();
+            // Retry once
+            const page = await context.newPage();
+            await page.goto(notebookUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+            await page.waitForSelector('textarea.query-box-input', { timeout: 60_000 });
+            const title = await page.textContent('.title-label-inner').catch(() => null) || 'Unknown Notebook';
+            return { page, title };
+        }
+        throw e;
+    }
 }
 
 async function getSession(ip, notebookUrl) {
@@ -76,8 +100,8 @@ async function getSession(ip, notebookUrl) {
     }
     if (s?.page && !s.page.isClosed()) try { await s.page.close(); } catch {}
 
-    const page = await createPage(notebookUrl);
-    s = { page, notebook: notebookUrl, queue: [], processing: false, lastUsed: Date.now() };
+    const { page, title } = await createPage(notebookUrl);
+    s = { page, notebook: notebookUrl, title, queue: [], processing: false, lastUsed: Date.now() };
     sessions.set(ip, s);
     console.log(`[session] ${ip} (${sessions.size}/${MAX_SESSIONS})`);
     return s;
@@ -143,7 +167,24 @@ async function boot() {
 app.get('/health', (req, res) => {
     const ip = req.clientId;
     const pref = stmtGetPref.get(ip);
-    const userNotebook = pref ? pref.notebook : null;
+    let userNotebook = pref ? pref.notebook : null;
+    let userTitle = null;
+
+    if (!userNotebook) {
+        const anyNbs = stmtGetAnyNb.all();
+        if (anyNbs.length === 1) {
+            userNotebook = anyNbs[0].url;
+            userTitle = anyNbs[0].title;
+            stmtSetPref.run(ip, userNotebook);
+        }
+    }
+    
+    const savedNotebooks = stmtGetNbs.all(ip);
+    if (userNotebook) {
+        const found = savedNotebooks.find(n => n.url === userNotebook);
+        if (found) userTitle = found.title;
+    }
+    
     const details = [];
     for (const [k, s] of sessions) { details.push({ ip: k, notebook: s.notebook, queue: s.queue.length }); }
 
@@ -169,7 +210,7 @@ app.get('/health', (req, res) => {
         }
     } catch {}
 
-    res.json({ status: 'running', ip, currentNotebook: userNotebook, session, sessions: { active: details.length, max: MAX_SESSIONS, details } });
+    res.json({ status: 'running', ip, currentNotebook: userNotebook, currentNotebookTitle: userTitle, savedNotebooks, session, sessions: { active: details.length, max: MAX_SESSIONS, details } });
 });
 
 app.post('/api/ask', async (req, res) => {
@@ -212,6 +253,13 @@ app.get('/api/history', (req, res) => {
     if (!nb) {
         const pref = stmtGetPref.get(ip);
         nb = pref ? pref.notebook : null;
+        if (!nb) {
+            const anyNbs = stmtGetAnyNb.all();
+            if (anyNbs.length === 1) {
+                nb = anyNbs[0].url;
+                stmtSetPref.run(ip, nb);
+            }
+        }
     }
     if (!nb) return res.json({ success: true, data: [], meta: { ip, count: 0 } });
     
@@ -224,16 +272,49 @@ app.get('/api/logs', (req, res) => {
     res.json({ success: true, data: rows, meta: { count: rows.length } });
 });
 
-app.post('/api/notebook', async (req, res) => {
+app.post('/api/notebook', (req, res) => {
     const ip = req.clientId;
     const { url } = req.body;
     if (!url?.includes('notebooklm.google.com/notebook/')) return res.status(400).json({ success: false, error: { code: 'INVALID_URL', message: 'Invalid URL' } });
     try { 
         stmtSetPref.run(ip, url);
-        await getSession(ip, url); 
-        res.json({ success: true, data: { notebook: url, ip } }); 
+        
+        // Find existing title
+        const exist = stmtGetNbs.all(ip).find(n => n.url === url);
+        let title = exist ? exist.title : 'Connecting...';
+        
+        res.json({ success: true, data: { notebook: url, ip, title } }); 
+
+        // Load session in background to make switching instant
+        getSession(ip, url).then(s => {
+            stmtSaveNb.run(ip, url, s.title);
+        }).catch(e => console.error('[bg session error]', e));
     }
-    catch (e) { res.status(500).json({ success: false, error: { code: 'SWITCH_FAILED', message: e.message } }); }
+    catch (e) { 
+        console.error('[API /notebook error]', e);
+        res.status(500).json({ success: false, error: { code: 'SWITCH_FAILED', message: e.message } }); 
+    }
+});
+
+app.patch('/api/notebook', (req, res) => {
+    const ip = req.clientId;
+    const { url, title } = req.body;
+    if(!url || !title) return res.status(400).json({success:false});
+    stmtSaveNb.run(ip, url, title);
+    res.json({ success: true });
+});
+
+app.delete('/api/notebook', (req, res) => {
+    const ip = req.clientId;
+    const { url } = req.body;
+    if(!url) return res.status(400).json({success:false});
+    stmtDeleteNb.run(ip, url);
+    // If deleted notebook is active, clear it
+    const pref = stmtGetPref.get(ip);
+    if(pref && pref.notebook === url) {
+        db.prepare(`DELETE FROM user_preferences WHERE ip=?`).run(ip);
+    }
+    res.json({ success: true });
 });
 
 // --- Start ---

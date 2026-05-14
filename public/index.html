@@ -116,6 +116,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     .feed{padding:16px}
     .input-area{padding:10px 16px max(16px, env(safe-area-inset-bottom))}
 }
+/* Grid */
+.nb-grid{display:flex;flex-direction:column;gap:8px;padding:16px;border-bottom:1px solid var(--border)}
+.nb-card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px;cursor:pointer;transition:.2s;display:flex;flex-direction:column;gap:4px;overflow:hidden}
+.nb-card:hover{border-color:var(--green)}
+.nb-card.active{border-color:var(--green);background:var(--bg)}
+.nb-card .title{font-size:12px;color:var(--green);font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:48px}
+.nb-card .url{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nb-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px;opacity:0.3;transition:0.2s}
+.nb-card:hover .nb-actions{opacity:1}
+.nb-act-btn{background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--muted);cursor:pointer;font-size:10px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;outline:none;transition:.2s}
+.nb-act-btn:hover{color:var(--green);border-color:var(--green)}
+.nb-act-btn.del:hover{color:var(--red);border-color:var(--red)}
+.nb-add{border:1px dashed var(--border);background:transparent;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;padding:10px;cursor:pointer;transition:.2s}
+.nb-add:hover{border-color:var(--green);color:var(--green)}
+
 /* Modal */
 .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
 .modal-content{background:var(--surface);border:1px solid var(--border);padding:24px;border-radius:6px;width:100%;max-width:400px}
@@ -138,12 +153,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     <div class="actions">
         <button class="btn" onclick="clearChat()">[ clear ]</button>
     </div>
-    <div class="nb-row">
-        <input type="text" id="nbUrl" placeholder="notebook url...">
-        <button onclick="setNb()">set</button>
-    </div>
     <div class="hist-title">─── history ───</div>
     <div class="hist" id="hist"></div>
+    <div class="nb-grid" id="nbGrid">
+        <div class="nb-card nb-add" onclick="document.getElementById('setupModal').style.display='flex'">+ add notebook</div>
+    </div>
     <div class="session-info" id="sessionInfo">
         <div><span class="label">auth  </span><span class="val" id="authStatus">–</span></div>
         <div><span class="label">expires </span><span class="val" id="authExpiry">–</span></div>
@@ -172,10 +186,37 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 
 <div class="modal" id="setupModal" style="display:none">
     <div class="modal-content">
-        <h2>Set Notebook URL</h2>
-        <p>You haven't set a NotebookLM URL yet. Paste the full URL of your notebook to begin.</p>
+        <h2>Add Notebook</h2>
+        <p>Paste the full URL of your NotebookLM notebook to connect.</p>
         <input type="text" id="setupUrl" placeholder="https://notebooklm.google.com/notebook/...">
-        <button onclick="saveSetup()">Connect</button>
+        <div style="display:flex;gap:8px">
+            <button onclick="document.getElementById('setupModal').style.display='none'" style="background:transparent;border:1px solid var(--border);color:var(--text)">Cancel</button>
+            <button onclick="saveSetup()">Connect</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="editModal" style="display:none">
+    <div class="modal-content">
+        <h2>Edit Profile Title</h2>
+        <input type="hidden" id="editUrl">
+        <input type="text" id="editTitle" placeholder="My Notebook...">
+        <div style="display:flex;gap:8px">
+            <button onclick="document.getElementById('editModal').style.display='none'" style="background:transparent;border:1px solid var(--border);color:var(--text)">Cancel</button>
+            <button onclick="saveEdit()">Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="delModal" style="display:none">
+    <div class="modal-content">
+        <h2>Delete Profile</h2>
+        <p>Remove this notebook profile from your sidebar? (Your chat history remains in the database)</p>
+        <input type="hidden" id="delUrl">
+        <div style="display:flex;gap:8px">
+            <button onclick="document.getElementById('delModal').style.display='none'" style="background:transparent;border:1px solid var(--border);color:var(--text)">Cancel</button>
+            <button onclick="confirmDel()" style="background:#2a0000;border:1px solid #400;color:var(--red)">Delete</button>
+        </div>
     </div>
 </div>
 
@@ -201,8 +242,31 @@ async function health(){
         }
         if(d.currentNotebook){
             nb=d.currentNotebook;
-            document.getElementById('nbLabel').textContent=nb.split('/notebook/')[1]?.slice(0,12)+'...';
+            const t=d.currentNotebookTitle||(nb.split('/notebook/')[1]?.slice(0,12)+'...');
+            document.getElementById('nbLabel').textContent=t;
             document.getElementById('setupModal').style.display='none';
+            if(d.savedNotebooks){
+                const grid=document.getElementById('nbGrid');
+                grid.innerHTML='';
+                d.savedNotebooks.forEach(n=>{
+                    const c=document.createElement('div');
+                    c.className='nb-card'+(n.url===nb?' active':'');
+                    c.onclick=()=>switchNb(n.url, c);
+                    c.innerHTML=`
+                        <div class="title">${esc(n.title||n.url)}</div>
+                        <div class="url">${esc(n.url.split('/notebook/')[1]||'')}</div>
+                        <div class="nb-actions">
+                            <button class="nb-act-btn" onclick="event.stopPropagation();editNb('${n.url}','${esc((n.title||'').replace(/'/g,"\\'"))}')">✎</button>
+                            <button class="nb-act-btn del" onclick="event.stopPropagation();delNb('${n.url}')">×</button>
+                        </div>
+                    `;
+                    grid.appendChild(c);
+                });
+                const add=document.createElement('div');
+                add.className='nb-card nb-add';add.textContent='+ add notebook';
+                add.onclick=()=>document.getElementById('setupModal').style.display='flex';
+                grid.appendChild(add);
+            }
             if(!hasCheckedInitial){hasCheckedInitial=true;loadHist()}
         } else {
             document.getElementById('setupModal').style.display='flex';
@@ -297,30 +361,63 @@ async function saveSetup() {
         try {
             const res = await fetch(`${A}/api/notebook`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:u})});
             if(res.ok) {
+                const data = await res.json();
                 nb = u;
-                document.getElementById('nbLabel').textContent=u.split('/notebook/')[1]?.slice(0,12)+'...';
+                document.getElementById('nbLabel').textContent=data.data.title || u.split('/notebook/')[1]?.slice(0,12)+'...';
                 document.getElementById('setupModal').style.display='none';
+                document.getElementById('setupUrl').value='';
                 loadHist();
+                health(); // to reload dropdown
             } else toast('Failed to connect','err');
         } catch(e) { toast('Network error','err'); }
         btn.textContent='Connect';
     } else toast('Invalid URL','err');
 }
 
-async function setNb(){
-    const u=document.getElementById('nbUrl').value.trim();
-    if(u&&u.includes('notebooklm.google.com/notebook/')){
-        try {
-            const res = await fetch(`${A}/api/notebook`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:u})});
-            if(res.ok) {
-                nb=u;
-                document.getElementById('nbLabel').textContent=u.split('/notebook/')[1]?.slice(0,12)+'...';
-                toast('notebook set','ok');
-                loadHist();
-            } else toast('failed to set','err');
-        } catch(e) { toast('network error','err'); }
+async function switchNb(u, el){
+    if(u===nb)return;
+    if(el){
+        document.querySelectorAll('.nb-card').forEach(c=>c.classList.remove('active'));
+        el.classList.add('active');
     }
-    else toast('invalid url','err');
+    nb=u;
+    document.getElementById('feed').innerHTML='';
+    loadHist();
+    toast('connecting...','ok');
+    try {
+        const res = await fetch(`${A}/api/notebook`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:u})});
+        if(res.ok) {
+            const data = await res.json();
+            document.getElementById('nbLabel').textContent=data.data.title || u.split('/notebook/')[1]?.slice(0,12)+'...';
+            health();
+        } else toast('failed to switch','err');
+    } catch(e) { toast('network error','err'); }
+}
+function editNb(u, current) {
+    document.getElementById('editUrl').value = u;
+    document.getElementById('editTitle').value = current;
+    document.getElementById('editModal').style.display = 'flex';
+    document.getElementById('editTitle').focus();
+}
+async function saveEdit() {
+    const u = document.getElementById('editUrl').value;
+    const t = document.getElementById('editTitle').value.trim();
+    if(t) {
+        document.getElementById('editModal').style.display = 'none';
+        await fetch(`${A}/api/notebook`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:u, title:t})});
+        health();
+    }
+}
+function delNb(u) {
+    document.getElementById('delUrl').value = u;
+    document.getElementById('delModal').style.display = 'flex';
+}
+async function confirmDel() {
+    const u = document.getElementById('delUrl').value;
+    document.getElementById('delModal').style.display = 'none';
+    await fetch(`${A}/api/notebook`, {method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:u})});
+    if(u===nb) { nb=null; loadHist(); }
+    health();
 }
 function clearChat(){document.getElementById('feed').innerHTML='';renderHist()}
 function toast(m,t){const e=document.createElement('div');e.className=`toast ${t}`;e.textContent='> '+m;document.body.appendChild(e);setTimeout(()=>e.remove(),3000)}

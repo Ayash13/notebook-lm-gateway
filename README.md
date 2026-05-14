@@ -176,7 +176,41 @@ Admin endpoint — all conversations across all users.
 
 ### `POST /api/notebook`
 
-Switch to a different notebook for the current device.
+Switch to a different notebook for the current device. The Playwright session is loaded asynchronously in the background so the UI feels instant. If there is exactly one notebook profile globally in the database, it will be automatically assigned to new users as the default.
+
+```json
+{
+    "url": "https://notebooklm.google.com/notebook/xxx"
+}
+```
+
+**Response:**
+
+```json
+{
+    "success": true,
+    "data": {
+        "notebook": "https://notebooklm.google.com/notebook/xxx",
+        "ip": "a3f2b1c9-...",
+        "title": "Professional Portfolio of Muhammad Ayash Al-Fatih"
+    }
+}
+```
+
+### `PATCH /api/notebook`
+
+Update the custom human-readable title for a saved notebook profile.
+
+```json
+{
+    "url": "https://notebooklm.google.com/notebook/xxx",
+    "title": "My Updated Custom Title"
+}
+```
+
+### `DELETE /api/notebook`
+
+Remove a saved notebook profile from your sidebar grid. (Note: The chat history associated with the notebook remains preserved in the database.)
 
 ```json
 {
@@ -192,6 +226,14 @@ Server status, active sessions, and Google cookie expiry.
 {
     "status": "running",
     "ip": "a3f2b1c9-...",
+    "currentNotebook": "https://notebooklm.google.com/notebook/xxx",
+    "currentNotebookTitle": "Professional Portfolio of Muhammad Ayash Al-Fatih",
+    "savedNotebooks": [
+        {
+            "url": "https://notebooklm.google.com/notebook/xxx",
+            "title": "Professional Portfolio of Muhammad Ayash Al-Fatih"
+        }
+    ],
     "session": {
         "status": "valid",
         "expires_at": "2026-12-04T08:46:42.000Z",
@@ -274,6 +316,12 @@ CREATE INDEX IF NOT EXISTS idx_conv_ip ON conversations(ip);
 
 CREATE TABLE IF NOT EXISTS user_preferences (
     ip TEXT PRIMARY KEY, notebook TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS saved_notebooks (
+    ip TEXT NOT NULL, url TEXT NOT NULL, title TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (ip, url)
 );
 ```
 
