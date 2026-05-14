@@ -1,0 +1,5 @@
+node_modules/
+chrome-data/
+auth-state.json
+gateway.db
+gateway.db-*

@@ -1,0 +1,17 @@
+services:
+  gateway:
+    build: .
+    ports:
+      - "3005:3005"
+    volumes:
+      - nlm-gateway-db-fresh:/app/data
+    environment:
+      - PORT=3005
+      - DB_DIR=/app/data
+      - NOTEBOOK_URL=${NOTEBOOK_URL:-https://notebooklm.google.com/notebook/052a33bb-5f6c-4f37-9042-2f5d03294dab}
+      - MAX_SESSIONS=${MAX_SESSIONS:-5}
+    restart: unless-stopped
+
+volumes:
+  nlm-gateway-db-fresh:
+    name: nlm-gateway-db-fresh
