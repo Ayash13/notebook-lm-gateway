@@ -16,6 +16,7 @@
 - **Session pooling** — Pre-warmed Playwright pages with LRU eviction
 - **Persistence** — SQLite (WAL mode) stores all conversations per user
 - **Session monitoring** — Live Google cookie expiry displayed in the UI
+- **Clean Output** — Automatically strips NotebookLM citation markers from the DOM for clean text/markdown
 - **Docker-ready** — One-command deployment with `docker compose`
 - **Tunnel-friendly** — Works behind ngrok, cloudflared, or any reverse proxy
 
@@ -50,6 +51,18 @@
     │ Browser │                 │ auth-state.json│
     │ / API   │                 │ (Chrome cookies)│
     └─────────┘                 └───────────────┘
+```
+
+### Directory Structure
+
+```
+├── index.js           # Lightweight Express entry point
+├── login.js           # Auth orchestrator (extracts cookies)
+├── src/
+│   ├── api/           # Express REST controllers (routes.js)
+│   ├── auth/          # OS-specific DPAPI/Keychain decryption (mac.js, win.js)
+│   └── core/          # Playwright engine (browser.js) & SQLite (db.js)
+└── public/            # Decoupled frontend (index.html, style.css, app.js)
 ```
 
 ### Request Flow
