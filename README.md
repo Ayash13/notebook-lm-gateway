@@ -135,7 +135,7 @@ Send a query to NotebookLM.
 }
 ```
 
-> `notebook` is optional — defaults to `NOTEBOOK_URL` env var.
+> `notebook` is optional for subsequent queries, but required for your first query if you haven't set one yet.
 
 **Response:**
 
@@ -213,7 +213,6 @@ Server status, active sessions, and Google cookie expiry.
 | Variable | Default | Description |
 |---|---|---|
 | `PORT` | `3005` | Server port |
-| `NOTEBOOK_URL` | *(project default)* | Default NotebookLM notebook URL |
 | `MAX_SESSIONS` | `5` | Max concurrent browser pages (LRU eviction) |
 | `DB_DIR` | `.` | Directory for SQLite database file |
 
@@ -272,6 +271,10 @@ CREATE TABLE IF NOT EXISTS conversations (
     duration_ms INTEGER, created_at TEXT NOT NULL DEFAULT (datetime('now')), completed_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_conv_ip ON conversations(ip);
+
+CREATE TABLE IF NOT EXISTS user_preferences (
+    ip TEXT PRIMARY KEY, notebook TEXT NOT NULL
+);
 ```
 
 ---

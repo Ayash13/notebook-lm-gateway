@@ -9,7 +9,6 @@ const AUTH_STATE_PATH = path.join(__dirname, 'auth-state.json');
 const DB_DIR = process.env.DB_DIR || __dirname;
 const DB_PATH = path.join(DB_DIR, 'gateway.db');
 const PORT = process.env.PORT || 3005;
-const DEFAULT_NOTEBOOK = process.env.NOTEBOOK_URL || 'https://notebooklm.google.com/notebook/052a33bb-5f6c-4f37-9042-2f5d03294dab';
 const MAX_SESSIONS = parseInt(process.env.MAX_SESSIONS) || 5;
 
 const app = express();
@@ -28,6 +27,9 @@ db.exec(`
         duration_ms INTEGER, created_at TEXT NOT NULL DEFAULT (datetime('now')), completed_at TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_conv_ip ON conversations(ip);
+    CREATE TABLE IF NOT EXISTS user_preferences (
+        ip TEXT PRIMARY KEY, notebook TEXT NOT NULL
+    );
 `);
 
 const stmtInsert = db.prepare(`INSERT INTO conversations (ip, notebook, query) VALUES (?, ?, ?)`);
@@ -35,6 +37,8 @@ const stmtComplete = db.prepare(`UPDATE conversations SET response=?, markdown=?
 const stmtFail = db.prepare(`UPDATE conversations SET status='failed', response=?, completed_at=datetime('now') WHERE id=?`);
 const stmtHistory = db.prepare(`SELECT id,query,response,markdown,status,duration_ms,created_at,completed_at FROM conversations WHERE ip=? AND notebook=? ORDER BY created_at DESC LIMIT ?`);
 const stmtAll = db.prepare(`SELECT id,ip,notebook,query,response,status,duration_ms,created_at FROM conversations ORDER BY created_at DESC LIMIT ?`);
+const stmtGetPref = db.prepare(`SELECT notebook FROM user_preferences WHERE ip=?`);
+const stmtSetPref = db.prepare(`INSERT INTO user_preferences (ip, notebook) VALUES (?, ?) ON CONFLICT(ip) DO UPDATE SET notebook=excluded.notebook`);
 
 // --- Globals ---
 const crypto = require('crypto');
@@ -132,16 +136,16 @@ async function boot() {
         storageState, userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
         viewport: { width: 1280, height: 800 }
     });
-    const page = await createPage(DEFAULT_NOTEBOOK);
-    sessions.set('__warmup', { page, notebook: DEFAULT_NOTEBOOK, queue: [], processing: false, lastUsed: 0 });
     console.log('[ready] gateway online');
 }
 
 // --- Routes ---
 app.get('/health', (req, res) => {
     const ip = req.clientId;
+    const pref = stmtGetPref.get(ip);
+    const userNotebook = pref ? pref.notebook : null;
     const details = [];
-    for (const [k, s] of sessions) { if (k === '__warmup') continue; details.push({ ip: k, notebook: s.notebook, queue: s.queue.length }); }
+    for (const [k, s] of sessions) { details.push({ ip: k, notebook: s.notebook, queue: s.queue.length }); }
 
     // Session expiry from auth cookies
     let session = { status: 'unknown' };
@@ -165,25 +169,31 @@ app.get('/health', (req, res) => {
         }
     } catch {}
 
-    res.json({ status: 'running', ip, session, sessions: { active: details.length, max: MAX_SESSIONS, details } });
+    res.json({ status: 'running', ip, currentNotebook: userNotebook, session, sessions: { active: details.length, max: MAX_SESSIONS, details } });
 });
 
 app.post('/api/ask', async (req, res) => {
     const ip = req.clientId;
-    const { query, notebook } = req.body;
-    const nb = notebook || DEFAULT_NOTEBOOK;
-    if (!query) return res.status(400).json({ success: false, error: { code: 'MISSING_QUERY', message: 'query is required' } });
+    let nb = req.body.notebook;
+    
+    if (nb) {
+        stmtSetPref.run(ip, nb);
+    } else {
+        const pref = stmtGetPref.get(ip);
+        nb = pref ? pref.notebook : null;
+    }
+    
+    if (!nb) return res.status(400).json({ success: false, error: { code: 'MISSING_NOTEBOOK', message: 'Notebook URL is required for the first query' } });
+    if (!req.body.query) return res.status(400).json({ success: false, error: { code: 'MISSING_QUERY', message: 'query is required' } });
 
+    const query = req.body.query;
     const row = stmtInsert.run(ip, nb, query);
     const id = row.lastInsertRowid;
     const start = Date.now();
     try {
         let s = sessions.get(ip);
         if (!s || s.page.isClosed() || s.notebook !== nb) {
-            const w = sessions.get('__warmup');
-            if (w && !w.page.isClosed() && w.notebook === nb && !sessions.has(ip)) {
-                sessions.delete('__warmup'); s = { ...w, lastUsed: Date.now() }; sessions.set(ip, s);
-            } else { s = await getSession(ip, nb); }
+            s = await getSession(ip, nb);
         } else { s.lastUsed = Date.now(); }
         const data = await enqueue(s, query);
         const dur = Date.now() - start;
@@ -198,7 +208,13 @@ app.post('/api/ask', async (req, res) => {
 app.get('/api/history', (req, res) => {
     const ip = req.clientId;
     const limit = Math.min(parseInt(req.query.limit) || 20, 100);
-    const nb = req.query.notebook || DEFAULT_NOTEBOOK;
+    let nb = req.query.notebook;
+    if (!nb) {
+        const pref = stmtGetPref.get(ip);
+        nb = pref ? pref.notebook : null;
+    }
+    if (!nb) return res.json({ success: true, data: [], meta: { ip, count: 0 } });
+    
     const rows = stmtHistory.all(ip, nb, limit);
     res.json({ success: true, data: rows, meta: { ip, notebook: nb, count: rows.length } });
 });
@@ -212,7 +228,11 @@ app.post('/api/notebook', async (req, res) => {
     const ip = req.clientId;
     const { url } = req.body;
     if (!url?.includes('notebooklm.google.com/notebook/')) return res.status(400).json({ success: false, error: { code: 'INVALID_URL', message: 'Invalid URL' } });
-    try { await getSession(ip, url); res.json({ success: true, data: { notebook: url, ip } }); }
+    try { 
+        stmtSetPref.run(ip, url);
+        await getSession(ip, url); 
+        res.json({ success: true, data: { notebook: url, ip } }); 
+    }
     catch (e) { res.status(500).json({ success: false, error: { code: 'SWITCH_FAILED', message: e.message } }); }
 });
 

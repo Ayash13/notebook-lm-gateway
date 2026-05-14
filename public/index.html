@@ -116,6 +116,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     .feed{padding:16px}
     .input-area{padding:10px 16px max(16px, env(safe-area-inset-bottom))}
 }
+/* Modal */
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-content{background:var(--surface);border:1px solid var(--border);padding:24px;border-radius:6px;width:100%;max-width:400px}
+.modal-content h2{font-size:14px;color:var(--green);margin-bottom:16px}
+.modal-content p{font-size:11px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.modal-content input{width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:11px;margin-bottom:16px;outline:none}
+.modal-content input:focus{border-color:var(--green)}
+.modal-content button{width:100%;padding:10px;background:var(--green-dark);border:1px solid var(--green);border-radius:4px;color:var(--green);font-family:var(--font);font-size:12px;cursor:pointer;transition:.2s}
+.modal-content button:hover{background:var(--green);color:#000}
 </style>
 </head>
 <body>
@@ -161,8 +170,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     </div>
 </div>
 
+<div class="modal" id="setupModal" style="display:none">
+    <div class="modal-content">
+        <h2>Set Notebook URL</h2>
+        <p>You haven't set a NotebookLM URL yet. Paste the full URL of your notebook to begin.</p>
+        <input type="text" id="setupUrl" placeholder="https://notebooklm.google.com/notebook/...">
+        <button onclick="saveSetup()">Connect</button>
+    </div>
+</div>
+
 <script>
-const A='';let nb=null,busy=false,clientIP='',histData=[];
+const A='';let nb=null,busy=false,clientIP='',histData=[],hasCheckedInitial=false;
 
 async function health(){
     try{
@@ -180,6 +198,15 @@ async function health(){
             rem.textContent=s.remaining||'–';
             const days=parseInt(s.remaining);
             rem.className='val '+(s.status==='expired'?'bad':days<=2?'warn':'ok');
+        }
+        if(d.currentNotebook){
+            nb=d.currentNotebook;
+            document.getElementById('nbLabel').textContent=nb.split('/notebook/')[1]?.slice(0,12)+'...';
+            document.getElementById('setupModal').style.display='none';
+            if(!hasCheckedInitial){hasCheckedInitial=true;loadHist()}
+        } else {
+            document.getElementById('setupModal').style.display='flex';
+            hasCheckedInitial=true;
         }
     }catch{
         document.getElementById('dot').className='dot';
@@ -262,10 +289,37 @@ async function send(){
     busy=false;document.getElementById('sendBtn').disabled=false;input.focus();
 }
 
-function setNb(){
+async function saveSetup() {
+    const u = document.getElementById('setupUrl').value.trim();
+    if(u && u.includes('notebooklm.google.com/notebook/')){
+        const btn = document.getElementById('setupModal').querySelector('button');
+        btn.textContent='Connecting...';
+        try {
+            const res = await fetch(`${A}/api/notebook`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:u})});
+            if(res.ok) {
+                nb = u;
+                document.getElementById('nbLabel').textContent=u.split('/notebook/')[1]?.slice(0,12)+'...';
+                document.getElementById('setupModal').style.display='none';
+                loadHist();
+            } else toast('Failed to connect','err');
+        } catch(e) { toast('Network error','err'); }
+        btn.textContent='Connect';
+    } else toast('Invalid URL','err');
+}
+
+async function setNb(){
     const u=document.getElementById('nbUrl').value.trim();
-    if(u&&u.includes('notebooklm.google.com/notebook/')){nb=u;document.getElementById('nbLabel').textContent=u.split('/notebook/')[1]?.slice(0,12)+'...';toast('notebook set','ok');loadHist()}
-    else if(!u){nb=null;document.getElementById('nbLabel').textContent='default';loadHist()}
+    if(u&&u.includes('notebooklm.google.com/notebook/')){
+        try {
+            const res = await fetch(`${A}/api/notebook`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:u})});
+            if(res.ok) {
+                nb=u;
+                document.getElementById('nbLabel').textContent=u.split('/notebook/')[1]?.slice(0,12)+'...';
+                toast('notebook set','ok');
+                loadHist();
+            } else toast('failed to set','err');
+        } catch(e) { toast('network error','err'); }
+    }
     else toast('invalid url','err');
 }
 function clearChat(){document.getElementById('feed').innerHTML='';renderHist()}
@@ -277,7 +331,7 @@ function toggleMenu(){
     document.getElementById('overlay').classList.toggle('open');
 }
 document.getElementById('qi').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'});
-health();loadHist();setInterval(health,15000);
+health();setInterval(health,15000);
 </script>
 </body>
 </html>
