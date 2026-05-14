@@ -271,6 +271,27 @@ app.get('/api/logs', (req, res) => {
     const rows = stmtAll.all(Math.min(parseInt(req.query.limit) || 50, 200));
     res.json({ success: true, data: rows, meta: { count: rows.length } });
 });
+app.get('/api/notebook', (req, res) => {
+    const ip = req.clientId;
+    const pref = stmtGetPref.get(ip);
+    let current = pref ? pref.notebook : null;
+    const list = stmtGetNbs.all(ip);
+    
+    let currentTitle = null;
+    if (!current) {
+        const anyNbs = stmtGetAnyNb.all();
+        if (anyNbs.length === 1) {
+            current = anyNbs[0].url;
+            currentTitle = anyNbs[0].title;
+            stmtSetPref.run(ip, current);
+        }
+    } else {
+        const found = list.find(n => n.url === current);
+        if (found) currentTitle = found.title;
+    }
+    
+    res.json({ success: true, data: { current, currentTitle, profiles: list } });
+});
 
 app.post('/api/notebook', (req, res) => {
     const ip = req.clientId;
@@ -287,7 +308,7 @@ app.post('/api/notebook', (req, res) => {
 
         // Load session in background to make switching instant
         getSession(ip, url).then(s => {
-            stmtSaveNb.run(ip, url, s.title);
+            if (!exist) stmtSaveNb.run(ip, url, s.title);
         }).catch(e => console.error('[bg session error]', e));
     }
     catch (e) { 

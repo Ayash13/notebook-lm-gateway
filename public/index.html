@@ -404,6 +404,7 @@ async function saveEdit() {
     const t = document.getElementById('editTitle').value.trim();
     if(t) {
         document.getElementById('editModal').style.display = 'none';
+        if(u===nb) document.getElementById('nbLabel').textContent = t; // optimistic
         await fetch(`${A}/api/notebook`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:u, title:t})});
         health();
     }
@@ -415,8 +416,8 @@ function delNb(u) {
 async function confirmDel() {
     const u = document.getElementById('delUrl').value;
     document.getElementById('delModal').style.display = 'none';
+    if(u===nb) { nb=null; document.getElementById('feed').innerHTML=''; loadHist(); } // optimistic
     await fetch(`${A}/api/notebook`, {method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:u})});
-    if(u===nb) { nb=null; loadHist(); }
     health();
 }
 function clearChat(){document.getElementById('feed').innerHTML='';renderHist()}

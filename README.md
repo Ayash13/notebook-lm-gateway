@@ -174,6 +174,23 @@ Admin endpoint — all conversations across all users.
 |---|---|---|
 | `limit` | `50` | Max results (up to 200) |
 
+### `GET /api/notebook`
+
+Get your currently active notebook and a list of all your saved notebook profiles.
+
+```json
+{
+    "success": true,
+    "data": {
+        "current": "https://notebooklm.google.com/notebook/xxx",
+        "currentTitle": "My Notebook",
+        "profiles": [
+            { "url": "...", "title": "..." }
+        ]
+    }
+}
+```
+
 ### `POST /api/notebook`
 
 Switch to a different notebook for the current device. The Playwright session is loaded asynchronously in the background so the UI feels instant. If there is exactly one notebook profile globally in the database, it will be automatically assigned to new users as the default.
