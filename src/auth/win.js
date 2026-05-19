@@ -12,7 +12,7 @@ function getWindowsKey() {
         const keyWithoutPrefix = encryptedKey.slice(5);
         return dpapi.unprotectData(keyWithoutPrefix, null, 'CurrentUser');
     } catch (e) {
-        console.error("Failed to get Windows DPAPI key. Ensure win-dpapi is installed.");
+        console.error("Failed to get Windows DPAPI key. Error:", e.message);
         process.exit(1);
     }
 }
