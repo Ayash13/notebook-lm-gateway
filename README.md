@@ -84,17 +84,17 @@
 
 ### Prerequisites
 
-| Requirement | Purpose |
-|---|---|
-| **Node.js 20+** | Runtime |
-| **Google Chrome** | Cookie source (must be logged into Google) |
+| Requirement         | Purpose                                                          |
+| ------------------- | ---------------------------------------------------------------- |
+| **Node.js 20+**     | Runtime                                                          |
+| **Google Chrome**   | Cookie source (must be logged into Google)                       |
 | **macOS / Windows** | Cookie decryption via Keychain (`security` CLI) or Windows DPAPI |
 
 ### Install & Run
 
 ```bash
 # Clone and install
-git clone https://github.com/your-user/notebook-lm-gateway.git
+git clone https://github.com/Ayash13/notebook-lm-gateway.git
 cd notebook-lm-gateway
 npm install
 
@@ -146,8 +146,8 @@ Send a query to NotebookLM.
 
 ```json
 {
-    "query": "where ayash study?",
-    "notebook": "https://notebooklm.google.com/notebook/052a33bb-5f6c-4f37-9042-2f5d03294dab"
+  "query": "where ayash study?",
+  "notebook": "https://notebooklm.google.com/notebook/052a33bb-5f6c-4f37-9042-2f5d03294dab"
 }
 ```
 
@@ -157,19 +157,19 @@ Send a query to NotebookLM.
 
 ```json
 {
-    "success": true,
-    "data": {
-        "id": 3,
-        "query": "where ayash study?",
-        "response": "Muhammad Ayash Al-Fatih studied at Universitas Muhammadiyah Yogyakarta (UMY) in D.I. Yogyakarta, Indonesia. He earned a Bachelor's degree in Information Technology, graduating with a GPA of 3.79.\nAdditionally, he completed an intensive educational program at Bangkit Academy 2024, where he studied in the Mobile Development Cohort.",
-        "markdown": "Muhammad Ayash Al-Fatih studied at Universitas Muhammadiyah Yogyakarta (UMY) in D.I. Yogyakarta, Indonesia. He earned a Bachelor's degree in Information Technology, graduating with a GPA of 3.79. Additionally, he completed an intensive educational program at Bangkit Academy 2024, where he studied in the Mobile Development Cohort.",
-        "duration_ms": 7528,
-        "notebook": "https://notebooklm.google.com/notebook/052a33bb-5f6c-4f37-9042-2f5d03294dab"
-    },
-    "meta": {
-        "ip": "a3f2b1c9-1234-5678-abcd-ef0123456789",
-        "timestamp": "2026-05-14T03:00:00.000Z"
-    }
+  "success": true,
+  "data": {
+    "id": 3,
+    "query": "where ayash study?",
+    "response": "Muhammad Ayash Al-Fatih studied at Universitas Muhammadiyah Yogyakarta (UMY) in D.I. Yogyakarta, Indonesia. He earned a Bachelor's degree in Information Technology, graduating with a GPA of 3.79.\nAdditionally, he completed an intensive educational program at Bangkit Academy 2024, where he studied in the Mobile Development Cohort.",
+    "markdown": "Muhammad Ayash Al-Fatih studied at Universitas Muhammadiyah Yogyakarta (UMY) in D.I. Yogyakarta, Indonesia. He earned a Bachelor's degree in Information Technology, graduating with a GPA of 3.79. Additionally, he completed an intensive educational program at Bangkit Academy 2024, where he studied in the Mobile Development Cohort.",
+    "duration_ms": 7528,
+    "notebook": "https://notebooklm.google.com/notebook/052a33bb-5f6c-4f37-9042-2f5d03294dab"
+  },
+  "meta": {
+    "ip": "a3f2b1c9-1234-5678-abcd-ef0123456789",
+    "timestamp": "2026-05-14T03:00:00.000Z"
+  }
 }
 ```
 
@@ -177,18 +177,18 @@ Send a query to NotebookLM.
 
 Conversation history for the current device.
 
-| Param | Default | Description |
-|---|---|---|
-| `limit` | `20` | Max results (up to 100) |
-| `notebook` | default | Filter by notebook URL |
+| Param      | Default | Description             |
+| ---------- | ------- | ----------------------- |
+| `limit`    | `20`    | Max results (up to 100) |
+| `notebook` | default | Filter by notebook URL  |
 
 ### `GET /api/logs`
 
 Admin endpoint — all conversations across all users.
 
-| Param | Default | Description |
-|---|---|---|
-| `limit` | `50` | Max results (up to 200) |
+| Param   | Default | Description             |
+| ------- | ------- | ----------------------- |
+| `limit` | `50`    | Max results (up to 200) |
 
 ### `GET /api/notebook`
 
@@ -196,14 +196,12 @@ Get your currently active notebook and a list of all your saved notebook profile
 
 ```json
 {
-    "success": true,
-    "data": {
-        "current": "https://notebooklm.google.com/notebook/xxx",
-        "currentTitle": "My Notebook",
-        "profiles": [
-            { "url": "...", "title": "..." }
-        ]
-    }
+  "success": true,
+  "data": {
+    "current": "https://notebooklm.google.com/notebook/xxx",
+    "currentTitle": "My Notebook",
+    "profiles": [{ "url": "...", "title": "..." }]
+  }
 }
 ```
 
@@ -213,7 +211,7 @@ Switch to a different notebook for the current device. The Playwright session is
 
 ```json
 {
-    "url": "https://notebooklm.google.com/notebook/xxx"
+  "url": "https://notebooklm.google.com/notebook/xxx"
 }
 ```
 
@@ -221,12 +219,12 @@ Switch to a different notebook for the current device. The Playwright session is
 
 ```json
 {
-    "success": true,
-    "data": {
-        "notebook": "https://notebooklm.google.com/notebook/xxx",
-        "ip": "a3f2b1c9-...",
-        "title": "Professional Portfolio of Muhammad Ayash Al-Fatih"
-    }
+  "success": true,
+  "data": {
+    "notebook": "https://notebooklm.google.com/notebook/xxx",
+    "ip": "a3f2b1c9-...",
+    "title": "Professional Portfolio of Muhammad Ayash Al-Fatih"
+  }
 }
 ```
 
@@ -236,8 +234,8 @@ Update the custom human-readable title for a saved notebook profile.
 
 ```json
 {
-    "url": "https://notebooklm.google.com/notebook/xxx",
-    "title": "My Updated Custom Title"
+  "url": "https://notebooklm.google.com/notebook/xxx",
+  "title": "My Updated Custom Title"
 }
 ```
 
@@ -247,7 +245,7 @@ Remove a saved notebook profile from your sidebar grid. (Note: The chat history 
 
 ```json
 {
-    "url": "https://notebooklm.google.com/notebook/xxx"
+  "url": "https://notebooklm.google.com/notebook/xxx"
 }
 ```
 
@@ -285,11 +283,11 @@ Server status, active sessions, and Google cookie expiry.
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|---|---|---|
-| `PORT` | `3005` | Server port |
-| `MAX_SESSIONS` | `5` | Max concurrent browser pages (LRU eviction) |
-| `DB_DIR` | `.` | Directory for SQLite database file |
+| Variable       | Default | Description                                 |
+| -------------- | ------- | ------------------------------------------- |
+| `PORT`         | `3005`  | Server port                                 |
+| `MAX_SESSIONS` | `5`     | Max concurrent browser pages (LRU eviction) |
+| `DB_DIR`       | `.`     | Directory for SQLite database file          |
 
 ---
 
@@ -313,11 +311,13 @@ Google session cookies (~6 month expiry) are automatically extracted from Chrome
 ### How `login.js` Works
 
 **On macOS:**
+
 1. Reads Chrome's `Cookies` SQLite database (read-only).
 2. Retrieves the encryption key via `security find-generic-password` (Keychain).
 3. Decrypts `AES-128-CBC` encrypted cookie values and strips the 32-byte binary signature.
 
 **On Windows:**
+
 1. Copies the `Cookies` SQLite database to a temporary file (to bypass Chrome's strict file locks).
 2. Retrieves the encrypted key from Chrome's `Local State` file and decrypts it using DPAPI (`win-dpapi`).
 3. Decrypts `AES-256-GCM` encrypted cookie values.
@@ -380,26 +380,26 @@ notebook-lm-gateway/
 
 ### Key Components
 
-| File | Role |
-|---|---|
-| `index.js` | Express server with cookie-based device identity, Playwright page pool (LRU, max 5), query queue with serialized execution, HTML→markdown parser, session warmup |
-| `login.js` | Extracts Google cookies from Chrome's SQLite DB, decrypts via macOS Keychain (AES-128-CBC) or Windows DPAPI (AES-256-GCM), exports Playwright-compatible state |
-| `public/index.html` | Single-file terminal UI — JetBrains Mono, WebSocket-free, vanilla JS, responsive sidebar, history replay, session expiry panel |
+| File                | Role                                                                                                                                                             |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.js`          | Express server with cookie-based device identity, Playwright page pool (LRU, max 5), query queue with serialized execution, HTML→markdown parser, session warmup |
+| `login.js`          | Extracts Google cookies from Chrome's SQLite DB, decrypts via macOS Keychain (AES-128-CBC) or Windows DPAPI (AES-256-GCM), exports Playwright-compatible state   |
+| `public/index.html` | Single-file terminal UI — JetBrains Mono, WebSocket-free, vanilla JS, responsive sidebar, history replay, session expiry panel                                   |
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| **Runtime** | Node.js 20 |
-| **Server** | Express 5 |
-| **Browser** | Playwright + Chromium (headless) |
-| **Database** | better-sqlite3 (WAL mode) |
-| **Auth** | Chrome cookie extraction via macOS Keychain |
-| **Identity** | Cookie-based UUID (`nlm_uid`, 1-year expiry) |
-| **UI** | Vanilla HTML/CSS/JS, JetBrains Mono |
-| **Container** | Docker (node:20-slim + Playwright deps) |
+| Layer         | Technology                                   |
+| ------------- | -------------------------------------------- |
+| **Runtime**   | Node.js 20                                   |
+| **Server**    | Express 5                                    |
+| **Browser**   | Playwright + Chromium (headless)             |
+| **Database**  | better-sqlite3 (WAL mode)                    |
+| **Auth**      | Chrome cookie extraction via macOS Keychain  |
+| **Identity**  | Cookie-based UUID (`nlm_uid`, 1-year expiry) |
+| **UI**        | Vanilla HTML/CSS/JS, JetBrains Mono          |
+| **Container** | Docker (node:20-slim + Playwright deps)      |
 
 ---
 
