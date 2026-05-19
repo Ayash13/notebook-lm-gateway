@@ -6,11 +6,16 @@ const LOCAL_STATE_PATH = path.join(process.env.LOCALAPPDATA || '', 'Google', 'Ch
 
 function getWindowsKey() {
     try {
-        const dpapi = require('win-dpapi');
+        const { execSync } = require('child_process');
         const localState = JSON.parse(fs.readFileSync(LOCAL_STATE_PATH, 'utf8'));
         const encryptedKey = Buffer.from(localState.os_crypt.encrypted_key, 'base64');
         const keyWithoutPrefix = encryptedKey.slice(5);
-        return dpapi.unprotectData(keyWithoutPrefix, null, 'CurrentUser');
+        
+        const b64In = keyWithoutPrefix.toString('base64');
+        const psScript = `Add-Type -AssemblyName System.Security; $in = [Convert]::FromBase64String('${b64In}'); $out = [System.Security.Cryptography.ProtectedData]::Unprotect($in, $null, 'CurrentUser'); [Convert]::ToBase64String($out)`;
+        
+        const output = execSync(`powershell -NoProfile -Command "${psScript}"`).toString().trim();
+        return Buffer.from(output, 'base64');
     } catch (e) {
         console.error("Failed to get Windows DPAPI key. Error:", e.message);
         process.exit(1);
