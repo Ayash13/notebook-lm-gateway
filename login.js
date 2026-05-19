@@ -18,7 +18,7 @@ if (isWin) {
 function decrypt(buf) {
     if (!buf || buf.length < 4) return '';
     const prefix = buf.slice(0, 3).toString('ascii');
-    if (prefix !== 'v10' && prefix !== 'v11') return buf.toString('utf8');
+    if (prefix !== 'v10' && prefix !== 'v11' && prefix !== 'v20') return buf.toString('utf8');
     return isWin ? authMod.decryptWin(buf, key) : authMod.decryptMac(buf, key);
 }
 
