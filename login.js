@@ -29,13 +29,34 @@ function chromeTimeToUnix(t) {
 
 console.log('Extracting cookies from Chrome...\n');
 
-const COOKIES_DB = isWin
-    ? path.join(process.env.LOCALAPPDATA || '', 'Google', 'Chrome', 'User Data', 'Default', 'Network', 'Cookies')
-    : path.join(os.homedir(), 'Library', 'Application Support', 'Google', 'Chrome', 'Default', 'Cookies');
+const userDataWin = path.join(process.env.LOCALAPPDATA || '', 'Google', 'Chrome', 'User Data');
+const userDataMac = path.join(os.homedir(), 'Library', 'Application Support', 'Google', 'Chrome');
 
-if (!fs.existsSync(COOKIES_DB)) {
-    console.error(`Cookie database not found at:\n${COOKIES_DB}`);
-    console.error('Make sure Chrome is installed and you are logged into Google.');
+const possiblePaths = isWin ? [
+    path.join(userDataWin, 'Default', 'Network', 'Cookies'),
+    path.join(userDataWin, 'Default', 'Cookies'),
+    path.join(userDataWin, 'Profile 1', 'Network', 'Cookies'),
+    path.join(userDataWin, 'Profile 1', 'Cookies'),
+    path.join(userDataWin, 'Profile 2', 'Network', 'Cookies'),
+    path.join(userDataWin, 'Profile 2', 'Cookies')
+] : [
+    path.join(userDataMac, 'Default', 'Cookies'),
+    path.join(userDataMac, 'Default', 'Network', 'Cookies'),
+    path.join(userDataMac, 'Profile 1', 'Cookies'),
+    path.join(userDataMac, 'Profile 1', 'Network', 'Cookies')
+];
+
+let COOKIES_DB = null;
+for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+        COOKIES_DB = p;
+        break;
+    }
+}
+
+if (!COOKIES_DB) {
+    console.error(`Cookie database not found in any of the standard locations.`);
+    console.error('Make sure Chrome is installed and you have browsed the web/logged in.');
     process.exit(1);
 }
 
