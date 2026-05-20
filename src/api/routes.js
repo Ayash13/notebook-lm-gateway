@@ -363,6 +363,11 @@ router.post('/api/ask', async (req, res) => {
         if (!s || s.page.isClosed() || s.notebook !== nb) {
             s = await browser.getSession(ip, nb);
         } else { s.lastUsed = Date.now(); }
+        
+        if (s.title && s.title !== 'Unknown Notebook') {
+            db.stmtSaveNb.run(ip, nb, s.title);
+        }
+        
         const data = await browser.enqueue(s, query);
         const dur = Date.now() - start;
         db.stmtComplete.run(data.text, data.markdown, dur, id);

@@ -105,7 +105,7 @@ function addEntry(type,text,ms){
 function addTyping(){
     const f=document.getElementById('feed');
     const e=document.createElement('div');e.className='typing-row';e.id='typing';
-    e.innerHTML='<div class="prompt"><span class="arrow" style="color:var(--cyan)">◆</span> <span style="color:var(--cyan)">processing</span></div><div class="body"><span class="cursor-blink"></span></div>';
+    e.innerHTML=`<div class="prompt"><span class="arrow" style="color:var(--cyan)">◆</span> <span style="color:var(--cyan)">generating</span></div><div class="skeleton-box"><div class="skeleton-line l-100"></div><div class="skeleton-line l-100"></div><div class="skeleton-line l-85"></div><div class="skeleton-line l-60"></div></div>`;
     f.appendChild(e);f.scrollTop=f.scrollHeight;
 }
 
@@ -119,7 +119,7 @@ async function send(){
         const body={query:q};if(nb)body.notebook=nb;
         const d=await(await fetch(`${A}/api/ask`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
         document.getElementById('typing')?.remove();
-        if(d.success){addEntry('bot',d.data.response,d.data.duration_ms);loadHist()}
+        if(d.success){addEntry('bot',d.data.response,d.data.duration_ms);loadHist();health();}
         else addEntry('bot','[error] '+d.error.message);
     }catch(e){document.getElementById('typing')?.remove();addEntry('bot','[network error] '+e.message)}
     busy=false;document.getElementById('sendBtn').disabled=false;input.focus();
@@ -138,6 +138,7 @@ async function saveSetup() {
                 document.getElementById('nbLabel').textContent=data.data.title || u.split('/notebook/')[1]?.slice(0,12)+'...';
                 closeModal('setupModal');
                 document.getElementById('setupUrl').value='';
+                document.getElementById('feed').innerHTML='';
                 loadHist();
                 health(); 
             } else toast('Failed to connect','err');

@@ -89,6 +89,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .cursor-blink{display:inline-block;width:8px;height:14px;background:var(--cyan);animation:cblink .6s step-end infinite;vertical-align:middle}
 @keyframes cblink{50%{opacity:0}}
 
+/* Skeleton Loading */
+.skeleton-box { padding: 14px 18px; background: var(--s2); border: 1px solid var(--border); border-radius: 6px; border-left: 3px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+.skeleton-line { height: 12px; background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; opacity: 0.5; }
+.skeleton-line.l-100 { width: 100%; }
+.skeleton-line.l-85 { width: 85%; }
+.skeleton-line.l-60 { width: 60%; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
 /* Input */
 .input-area{padding:12px 24px 20px;border-top:1px solid var(--border)}
 .input-row{display:flex;align-items:flex-end;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px}
