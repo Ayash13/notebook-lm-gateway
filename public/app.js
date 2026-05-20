@@ -132,7 +132,7 @@ async function send(){
 async function saveSetup() {
     const u = document.getElementById('setupUrl').value.trim();
     if(u && u.includes('notebooklm.google.com/notebook/')){
-        const btn = document.getElementById('setupModal').querySelector('button');
+        const btn = document.getElementById('setupModal').querySelector('button[onclick="saveSetup()"]');
         btn.textContent='Connecting...';
         try {
             const res = await fetch(`${A}/api/notebook`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:u})});
@@ -140,7 +140,7 @@ async function saveSetup() {
                 const data = await res.json();
                 nb = u;
                 document.getElementById('nbLabel').textContent=data.data.title || u.split('/notebook/')[1]?.slice(0,12)+'...';
-                document.getElementById('setupModal').style.display='none';
+                closeModal('setupModal');
                 document.getElementById('setupUrl').value='';
                 loadHist();
                 health(); 
@@ -172,14 +172,14 @@ async function switchNb(u, el){
 function editNb(u, current) {
     document.getElementById('editUrl').value = u;
     document.getElementById('editTitle').value = current;
-    document.getElementById('editModal').style.display = 'flex';
+    openModal('editModal');
     document.getElementById('editTitle').focus();
 }
 async function saveEdit() {
     const u = document.getElementById('editUrl').value;
     const t = document.getElementById('editTitle').value.trim();
     if(t) {
-        document.getElementById('editModal').style.display = 'none';
+        closeModal('editModal');
         if(u===nb) document.getElementById('nbLabel').textContent = t; 
         await fetch(`${A}/api/notebook`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:u, title:t})});
         health();
@@ -187,14 +187,24 @@ async function saveEdit() {
 }
 function delNb(u) {
     document.getElementById('delUrl').value = u;
-    document.getElementById('delModal').style.display = 'flex';
+    openModal('delModal');
 }
 async function confirmDel() {
     const u = document.getElementById('delUrl').value;
-    document.getElementById('delModal').style.display = 'none';
+    closeModal('delModal');
     if(u===nb) { nb=null; document.getElementById('feed').innerHTML=''; loadHist(); } 
     await fetch(`${A}/api/notebook`, {method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:u})});
     health();
+}
+function openModal(id) {
+    const m = document.getElementById(id);
+    m.classList.add('active');
+    m.style.display = 'flex';
+}
+function closeModal(id) {
+    const m = document.getElementById(id);
+    m.classList.remove('active');
+    setTimeout(() => { m.style.display = 'none'; }, 200);
 }
 function clearChat(){document.getElementById('feed').innerHTML='';renderHist()}
 function toast(m,t){const e=document.createElement('div');e.className=`toast ${t}`;e.textContent='> '+m;document.body.appendChild(e);setTimeout(()=>e.remove(),3000)}

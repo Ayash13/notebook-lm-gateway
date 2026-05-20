@@ -18,10 +18,18 @@
     <div class="actions">
         <button class="btn" onclick="clearChat()">[ clear ]</button>
     </div>
-    <div class="hist-title">─── history ───</div>
-    <div class="hist" id="hist"></div>
-    <div class="nb-grid" id="nbGrid">
-        <div class="nb-card nb-add" onclick="document.getElementById('setupModal').style.display='flex'">+ add notebook</div>
+    <div class="nb-section">
+        <div class="nb-header">
+            <span class="nb-label">─── notebooks ───</span>
+            <button class="nb-add-btn" onclick="openModal('setupModal')" title="Add notebook">+</button>
+        </div>
+        <div class="nb-grid" id="nbGrid"></div>
+    </div>
+    <div class="hist-section">
+        <div class="hist-header">
+            <span class="hist-label">─── history ───</span>
+        </div>
+        <div class="hist" id="hist"></div>
     </div>
     <div class="session-info" id="sessionInfo">
         <div><span class="label">auth  </span><span class="val" id="authStatus">–</span></div>
@@ -49,38 +57,53 @@
     </div>
 </div>
 
-<div class="modal" id="setupModal" style="display:none">
+<!-- Modal: Add Notebook -->
+<div class="modal" id="setupModal">
+    <div class="modal-overlay" onclick="closeModal('setupModal')"></div>
     <div class="modal-content">
-        <h2>Add Notebook</h2>
+        <div class="modal-header">
+            <h2>Add Notebook</h2>
+            <button class="modal-close" onclick="closeModal('setupModal')">×</button>
+        </div>
         <p>Paste the full URL of your NotebookLM notebook to connect.</p>
-        <input type="text" id="setupUrl" placeholder="https://notebooklm.google.com/notebook/...">
-        <div style="display:flex;gap:8px">
-            <button onclick="document.getElementById('setupModal').style.display='none'" style="background:transparent;border:1px solid var(--border);color:var(--text)">Cancel</button>
-            <button onclick="saveSetup()">Connect</button>
+        <input type="text" id="setupUrl" placeholder="https://notebooklm.google.com/notebook/..." onkeydown="if(event.key==='Enter')saveSetup()">
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal('setupModal')">Cancel</button>
+            <button class="btn-primary" onclick="saveSetup()">Connect</button>
         </div>
     </div>
 </div>
 
-<div class="modal" id="editModal" style="display:none">
+<!-- Modal: Edit Profile Title -->
+<div class="modal" id="editModal">
+    <div class="modal-overlay" onclick="closeModal('editModal')"></div>
     <div class="modal-content">
-        <h2>Edit Profile Title</h2>
+        <div class="modal-header">
+            <h2>Edit Profile Title</h2>
+            <button class="modal-close" onclick="closeModal('editModal')">×</button>
+        </div>
         <input type="hidden" id="editUrl">
-        <input type="text" id="editTitle" placeholder="My Notebook...">
-        <div style="display:flex;gap:8px">
-            <button onclick="document.getElementById('editModal').style.display='none'" style="background:transparent;border:1px solid var(--border);color:var(--text)">Cancel</button>
-            <button onclick="saveEdit()">Save</button>
+        <input type="text" id="editTitle" placeholder="My Notebook..." onkeydown="if(event.key==='Enter')saveEdit()">
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+            <button class="btn-primary" onclick="saveEdit()">Save</button>
         </div>
     </div>
 </div>
 
-<div class="modal" id="delModal" style="display:none">
-    <div class="modal-content">
-        <h2>Delete Profile</h2>
-        <p>Remove this notebook profile from your sidebar? (Your chat history remains in the database)</p>
+<!-- Modal: Delete Confirmation -->
+<div class="modal" id="delModal">
+    <div class="modal-overlay" onclick="closeModal('delModal')"></div>
+    <div class="modal-content modal-danger">
+        <div class="modal-header">
+            <h2>Delete Profile</h2>
+            <button class="modal-close" onclick="closeModal('delModal')">×</button>
+        </div>
+        <p>Remove this notebook profile from your sidebar? <br><small>(Your chat history remains in the database)</small></p>
         <input type="hidden" id="delUrl">
-        <div style="display:flex;gap:8px">
-            <button onclick="document.getElementById('delModal').style.display='none'" style="background:transparent;border:1px solid var(--border);color:var(--text)">Cancel</button>
-            <button onclick="confirmDel()" style="background:#2a0000;border:1px solid #400;color:var(--red)">Delete</button>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal('delModal')">Cancel</button>
+            <button class="btn-danger" onclick="confirmDel()">Delete</button>
         </div>
     </div>
 </div>
