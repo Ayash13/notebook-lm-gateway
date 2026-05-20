@@ -138,6 +138,22 @@ async function saveSetup() {
                 document.getElementById('nbLabel').textContent=data.data.title || u.split('/notebook/')[1]?.slice(0,12)+'...';
                 closeModal('setupModal');
                 document.getElementById('setupUrl').value='';
+                // Add the new notebook card immediately to sidebar
+                const grid=document.getElementById('nbGrid');
+                const c=document.createElement('div');
+                c.className='nb-card active';
+                // Deactivate others
+                document.querySelectorAll('.nb-card').forEach(x=>x.classList.remove('active'));
+                c.onclick=()=>switchNb(u, c);
+                c.innerHTML=`
+                    <div class="title">${esc(data.data.title || u)}</div>
+                    <div class="url">${esc(u.split('/notebook/')[1]||'')}</div>
+                    <div class="nb-actions">
+                        <button class="nb-act-btn" onclick="event.stopPropagation();editNb('${u}','${esc((data.data.title||'').replace(/'/g,"\\'"))}')">✎</button>
+                        <button class="nb-act-btn del" onclick="event.stopPropagation();delNb('${u}')">×</button>
+                    </div>
+                `;
+                grid.appendChild(c);
                 loadHist();
                 health(); 
             } else toast('Failed to connect','err');

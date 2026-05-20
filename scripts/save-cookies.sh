@@ -1,7 +1,7 @@
 #!/bin/bash
 # Save cookies from Chromium to auth-state.json
 
-COOKIE_FILE="$HOME/.config/chromium/Default/Cookies"
+COOKIE_FILE="$HOME/snap/chromium/common/chromium/Default/Cookies"
 AUTH_FILE="/tmp/notebook-lm-gateway/auth-state.json"
 
 if [ ! -f "$COOKIE_FILE" ]; then
