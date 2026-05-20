@@ -311,20 +311,22 @@ router.get('/health', (req, res) => {
 
     let session = { status: 'unknown' };
     try {
-        const raw = JSON.parse(fs.readFileSync(AUTH_STATE_PATH, 'utf8'));
-        const key = ['SID', '__Secure-1PSID', 'SSID', 'OSID'];
-        const important = raw.cookies.filter(c => key.includes(c.name) && c.expires > 0);
-        if (important.length) {
-            const earliest = important.reduce((a, b) => a.expires < b.expires ? a : b);
-            const expiresAt = new Date(earliest.expires * 1000);
-            const now = new Date();
-            const diffMs = expiresAt - now;
-            session = {
-                status: diffMs > 0 ? 'valid' : 'expired',
-                expires_at: expiresAt.toISOString(),
-                remaining: diffMs > 0 ? `${Math.floor(diffMs / 86400000)}d ${Math.floor((diffMs % 86400000) / 3600000)}h` : 'expired',
-                account: raw.cookies.find(c => c.name === 'SAPISID')?.domain || '.google.com'
-            };
+        if (fs.existsSync(AUTH_STATE_PATH) && !fs.statSync(AUTH_STATE_PATH).isDirectory()) {
+            const raw = JSON.parse(fs.readFileSync(AUTH_STATE_PATH, 'utf8'));
+            const key = ['SID', '__Secure-1PSID', 'SSID', 'OSID'];
+            const important = raw.cookies.filter(c => key.includes(c.name) && c.expires > 0);
+            if (important.length) {
+                const earliest = important.reduce((a, b) => a.expires < b.expires ? a : b);
+                const expiresAt = new Date(earliest.expires * 1000);
+                const now = new Date();
+                const diffMs = expiresAt - now;
+                session = {
+                    status: diffMs > 0 ? 'valid' : 'expired',
+                    expires_at: expiresAt.toISOString(),
+                    remaining: diffMs > 0 ? `${Math.floor(diffMs / 86400000)}d ${Math.floor((diffMs % 86400000) / 3600000)}h` : 'expired',
+                    account: raw.cookies.find(c => c.name === 'SAPISID')?.domain || '.google.com'
+                };
+            }
         }
     } catch {}
 

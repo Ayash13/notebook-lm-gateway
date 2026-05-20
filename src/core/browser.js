@@ -10,6 +10,10 @@ const sessions = new Map();
 
 async function boot() {
     if (!fs.existsSync(AUTH_STATE_PATH)) { console.error('Run: node login.js'); process.exit(1); }
+    if (fs.statSync(AUTH_STATE_PATH).isDirectory()) {
+        console.error('Error: auth-state.json is a directory, not a file. Verify your Docker volume/file mount paths.');
+        process.exit(1);
+    }
     const raw = JSON.parse(fs.readFileSync(AUTH_STATE_PATH, 'utf8'));
     const valid = ['Strict', 'Lax', 'None'];
     raw.cookies = raw.cookies.filter(c => c.name && c.value && c.domain).map(c => ({
