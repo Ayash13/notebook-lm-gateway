@@ -39,10 +39,6 @@ async function health(){
                     `;
                     grid.appendChild(c);
                 });
-                const add=document.createElement('div');
-                add.className='nb-card nb-add';add.textContent='+ add notebook';
-                add.onclick=()=>document.getElementById('setupModal').style.display='flex';
-                grid.appendChild(add);
             }
             if(!hasCheckedInitial){hasCheckedInitial=true;loadHist()}
         } else {

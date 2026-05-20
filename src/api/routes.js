@@ -148,13 +148,16 @@ router.post('/api/notebook', (req, res) => {
     try { 
         db.stmtSetPref.run(ip, url);
         
-        const exist = db.stmtGetNbs.all(ip).find(n => n.url === url);
-        let title = exist ? exist.title : 'Connecting...';
+        let exist = db.stmtGetNbs.all(ip).find(n => n.url === url);
+        if (!exist) {
+            db.stmtSaveNb.run(ip, url, 'Untitled');
+            exist = { title: 'Untitled' };
+        }
         
-        res.json({ success: true, data: { notebook: url, ip, title } }); 
+        res.json({ success: true, data: { notebook: url, ip, title: exist.title } }); 
 
         browser.getSession(ip, url).then(s => {
-            if (!exist) db.stmtSaveNb.run(ip, url, s.title);
+            if (s.title && s.title !== 'Unknown Notebook') db.stmtSaveNb.run(ip, url, s.title);
         }).catch(e => console.error('[bg session error]', e));
     }
     catch (e) { 
