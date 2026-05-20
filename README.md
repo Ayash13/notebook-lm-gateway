@@ -319,8 +319,10 @@ Google session cookies (~6 month expiry) are automatically extracted from Chrome
 **On Windows:**
 
 1. Copies the `Cookies` SQLite database to a temporary file (to bypass Chrome's strict file locks).
-2. Retrieves the encrypted key from Chrome's `Local State` file and decrypts it using DPAPI (`win-dpapi`).
+2. Retrieves the encrypted key from Chrome's `Local State` file and decrypts it using PowerShell's built-in `System.Security.Cryptography.ProtectedData` (no native addons required).
 3. Decrypts `AES-256-GCM` encrypted cookie values.
+
+> **Note:** Windows no longer requires `win-dpapi` or any C++ compilation tools. PowerShell handles DPAPI decryption natively.
 
 Finally, it exports all `*google.com*` cookies to `auth-state.json` (Playwright format).
 
@@ -396,7 +398,7 @@ notebook-lm-gateway/
 | **Server**    | Express 5                                    |
 | **Browser**   | Playwright + Chromium (headless)             |
 | **Database**  | better-sqlite3 (WAL mode)                    |
-| **Auth**      | Chrome cookie extraction via macOS Keychain  |
+| **Auth**      | Chrome cookie extraction via macOS Keychain or Windows PowerShell DPAPI |
 | **Identity**  | Cookie-based UUID (`nlm_uid`, 1-year expiry) |
 | **UI**        | Vanilla HTML/CSS/JS, JetBrains Mono          |
 | **Container** | Docker (node:20-slim + Playwright deps)      |
