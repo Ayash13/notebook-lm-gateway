@@ -3,3 +3,5 @@ gateway.db
 .git
 .gitignore
 *.md
+auth-state.json
+.env

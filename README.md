@@ -113,13 +113,18 @@ Open **http://localhost:3005** for the web UI.
 
 ```bash
 # 1. Extract cookies locally (requires Chrome on macOS or Windows)
+# This generates auth-state.json and automatically populates the .env file.
 npm run login
 
-# 2. Build and run (cookies baked into image)
-docker compose up -d --build
+# 2. Build and push your image (cross-platform)
+docker buildx build --platform linux/amd64,linux/arm64 -t your_username/notebook-lm-gateway:latest --push .
+
+# 3. On your VPS: Copy docker-compose.yml and .env, then run:
+docker compose pull
+docker compose up -d
 ```
 
-`auth-state.json` is copied into the Docker image so all users share the same Google session. Users are differentiated by their device UUID cookie.
+`AUTH_STATE` is passed into the Docker container securely via the `.env` file instead of being baked into the image. Users are differentiated by their device UUID cookie.
 
 ### Expose to Internet
 
@@ -329,8 +334,9 @@ Finally, it exports all `*google.com*` cookies to `auth-state.json` (Playwright 
 ### Refresh Flow
 
 ```bash
-npm run login                    # Re-extract from Chrome
-docker compose up -d --build     # Rebuild with fresh cookies
+npm run login                    # Re-extract from Chrome and update .env
+# Copy the updated .env to your VPS, then:
+docker compose up -d             # Restart container to pick up new env var
 ```
 
 The web UI sidebar shows real-time cookie expiry so you know when to refresh.

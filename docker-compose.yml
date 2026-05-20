@@ -1,10 +1,12 @@
 services:
   gateway:
-    build: .
+    image: ayash13/notebook-lm-gateway:latest
     ports:
       - "3005:3005"
     volumes:
       - nlm-gateway-db-fresh:/app/data
+    env_file:
+      - .env
     environment:
       - PORT=3005
       - DB_DIR=/app/data
