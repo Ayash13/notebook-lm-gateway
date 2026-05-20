@@ -7,6 +7,284 @@ const browser = require('../core/browser');
 const router = express.Router();
 const AUTH_STATE_PATH = path.join(__dirname, '../..', 'auth-state.json');
 
+router.get('/api', (req, res) => {
+    res.send(`<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>nlm::gateway API Docs</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+<style>
+:root {
+    --bg: #101014;
+    --surface: #16161c;
+    --s2: #1e1e26;
+    --border: #2a2a35;
+    --green: #5af7a8;
+    --green-dim: #3dd68e;
+    --green-dark: #1a3a2a;
+    --cyan: #64d8ff;
+    --yellow: #f5d67b;
+    --red: #ff6b7a;
+    --text: #d4d4dc;
+    --muted: #6b6b80;
+    --font: 'JetBrains Mono', monospace;
+}
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font) !important;
+}
+.swagger-ui {
+    font-family: var(--font) !important;
+    background-color: var(--bg) !important;
+    color: var(--text) !important;
+}
+.swagger-ui .info .title,
+.swagger-ui .info p,
+.swagger-ui .info li,
+.swagger-ui .info a,
+.swagger-ui .info h1,
+.swagger-ui .info h2,
+.swagger-ui .info h3,
+.swagger-ui .info h4,
+.swagger-ui .info h5 {
+    color: var(--text) !important;
+    font-family: var(--font) !important;
+}
+.swagger-ui .info .title {
+    color: var(--green) !important;
+    font-weight: 700;
+}
+.swagger-ui .topbar { display: none !important; }
+.swagger-ui .scheme-container {
+    background: var(--surface) !important;
+    border-bottom: 1px solid var(--border) !important;
+    box-shadow: none !important;
+    padding: 16px 30px !important;
+    margin-bottom: 20px !important;
+}
+.swagger-ui .scheme-container label {
+    color: var(--muted) !important;
+}
+.swagger-ui select {
+    background: var(--bg) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 4px !important;
+    font-family: var(--font) !important;
+    outline: none;
+    cursor: pointer;
+}
+.swagger-ui .opblock-tag {
+    color: var(--cyan) !important;
+    border-bottom: 1px solid var(--border) !important;
+    font-family: var(--font) !important;
+    font-size: 16px !important;
+}
+.swagger-ui .opblock-tag:hover {
+    background: rgba(100, 216, 255, 0.03) !important;
+}
+.swagger-ui .opblock-tag small {
+    color: var(--muted) !important;
+}
+.swagger-ui .opblock {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: none !important;
+    border-radius: 6px !important;
+}
+.swagger-ui .opblock .opblock-summary-path,
+.swagger-ui .opblock .opblock-summary-description,
+.swagger-ui .opblock .opblock-summary-operation-id {
+    color: var(--text) !important;
+    font-family: var(--font) !important;
+}
+.swagger-ui .opblock .opblock-summary-method {
+    font-family: var(--font) !important;
+    font-weight: bold !important;
+    border-radius: 4px !important;
+}
+.swagger-ui .opblock.opblock-get {
+    border-color: rgba(100, 216, 255, 0.3) !important;
+    background: rgba(100, 216, 255, 0.02) !important;
+}
+.swagger-ui .opblock.opblock-get .opblock-summary-method {
+    background: var(--cyan) !important;
+    color: #000 !important;
+}
+.swagger-ui .opblock.opblock-get .opblock-summary {
+    border-bottom: 1px solid rgba(100, 216, 255, 0.15) !important;
+}
+.swagger-ui .opblock.opblock-post {
+    border-color: rgba(90, 247, 168, 0.3) !important;
+    background: rgba(90, 247, 168, 0.02) !important;
+}
+.swagger-ui .opblock.opblock-post .opblock-summary-method {
+    background: var(--green) !important;
+    color: #000 !important;
+}
+.swagger-ui .opblock.opblock-post .opblock-summary {
+    border-bottom: 1px solid rgba(90, 247, 168, 0.15) !important;
+}
+.swagger-ui .opblock.opblock-patch {
+    border-color: rgba(245, 214, 123, 0.3) !important;
+    background: rgba(245, 214, 123, 0.02) !important;
+}
+.swagger-ui .opblock.opblock-patch .opblock-summary-method {
+    background: var(--yellow) !important;
+    color: #000 !important;
+}
+.swagger-ui .opblock.opblock-patch .opblock-summary {
+    border-bottom: 1px solid rgba(245, 214, 123, 0.15) !important;
+}
+.swagger-ui .opblock.opblock-delete {
+    border-color: rgba(255, 107, 122, 0.3) !important;
+    background: rgba(255, 107, 122, 0.02) !important;
+}
+.swagger-ui .opblock.opblock-delete .opblock-summary-method {
+    background: var(--red) !important;
+    color: #000 !important;
+}
+.swagger-ui .opblock.opblock-delete .opblock-summary {
+    border-bottom: 1px solid rgba(255, 107, 122, 0.15) !important;
+}
+.swagger-ui .opblock-section-header {
+    background: transparent !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+.swagger-ui .opblock-section-header h4 {
+    color: var(--text) !important;
+    font-family: var(--font) !important;
+}
+.swagger-ui .tabli button {
+    color: var(--text) !important;
+    font-family: var(--font) !important;
+}
+.swagger-ui .tabli.active button {
+    color: var(--green) !important;
+}
+.swagger-ui .parameter__name,
+.swagger-ui .parameter__type,
+.swagger-ui .parameter__deprecated,
+.swagger-ui .parameter__in {
+    color: var(--text) !important;
+    font-family: var(--font) !important;
+}
+.swagger-ui .parameter__name.required span {
+    color: var(--red) !important;
+}
+.swagger-ui .parameter__extension,
+.swagger-ui .parameter__in {
+    color: var(--muted) !important;
+}
+.swagger-ui .response-col_status,
+.swagger-ui .response-col_links {
+    color: var(--text) !important;
+    font-family: var(--font) !important;
+}
+.swagger-ui input[type=text],
+.swagger-ui textarea {
+    background: var(--bg) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 4px !important;
+    outline: none !important;
+    font-family: var(--font) !important;
+}
+.swagger-ui input[type=text]:focus,
+.swagger-ui textarea:focus {
+    border-color: var(--green) !important;
+}
+.swagger-ui table thead tr td,
+.swagger-ui table thead tr th {
+    color: var(--muted) !important;
+    border-bottom: 1px solid var(--border) !important;
+    font-family: var(--font) !important;
+}
+.swagger-ui table tbody tr td {
+    color: var(--text) !important;
+    font-family: var(--font) !important;
+}
+.swagger-ui .btn {
+    border-radius: 4px !important;
+    font-family: var(--font) !important;
+    transition: 0.2s !important;
+    border-width: 1px !important;
+}
+.swagger-ui .btn.execute {
+    background-color: var(--green-dark) !important;
+    border-color: var(--green) !important;
+    color: var(--green) !important;
+}
+.swagger-ui .btn.execute:hover {
+    background-color: var(--green) !important;
+    color: #000 !important;
+}
+.swagger-ui .btn.cancel {
+    background-color: rgba(255, 107, 122, 0.1) !important;
+    border-color: var(--red) !important;
+    color: var(--red) !important;
+}
+.swagger-ui .btn.cancel:hover {
+    background-color: var(--red) !important;
+    color: #fff !important;
+}
+.swagger-ui .btn.try-out__btn {
+    border-color: var(--cyan) !important;
+    color: var(--cyan) !important;
+    background: transparent !important;
+}
+.swagger-ui .btn.try-out__btn:hover {
+    background: rgba(100, 216, 255, 0.1) !important;
+}
+.swagger-ui .model-box {
+    background: var(--bg) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 4px !important;
+}
+.swagger-ui .model {
+    color: var(--text) !important;
+}
+.swagger-ui .model-title {
+    color: var(--cyan) !important;
+}
+.swagger-ui .prop-type {
+    color: var(--green-dim) !important;
+}
+.swagger-ui .prop-format {
+    color: var(--muted) !important;
+}
+.swagger-ui pre {
+    background: var(--bg) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 4px !important;
+    color: var(--green) !important;
+    font-family: var(--font) !important;
+}
+.swagger-ui .highlight-code {
+    background: var(--bg) !important;
+}
+.swagger-ui .microsite-link {
+    display: none !important;
+}
+.swagger-ui .dialog-ux .modal-ux {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+}
+.swagger-ui .dialog-ux .modal-ux-header h3 {
+    color: var(--text) !important;
+}
+.swagger-ui .dialog-ux .modal-ux-content p {
+    color: var(--muted) !important;
+}
+</style>
+</head><body><div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script>SwaggerUIBundle({url:'/swagger.json',dom_id:'#swagger-ui',deepLinking:true,presets:[SwaggerUIBundle.presets.apis,SwaggerUIBundle.SwaggerUIStandalonePreset],layout:'BaseLayout'})</script>
+</body></html>`);
+});
+
 router.get('/health', (req, res) => {
     const ip = req.clientId;
     const pref = db.stmtGetPref.get(ip);

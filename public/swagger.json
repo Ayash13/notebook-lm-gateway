@@ -1,0 +1,268 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "nlm::gateway API",
+    "description": "Headless API gateway for NotebookLM — query your notebooks programmatically.",
+    "version": "1.0.0"
+  },
+  "servers": [{ "url": "/" }],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Health check",
+        "description": "Server status, active sessions, and Google cookie expiry.",
+        "responses": {
+          "200": {
+            "description": "Server health info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "running" },
+                    "ip": { "type": "string", "example": "a3f2b1c9-1234-5678-abcd-ef0123456789" },
+                    "currentNotebook": { "type": "string" },
+                    "currentNotebookTitle": { "type": "string" },
+                    "session": {
+                      "type": "object",
+                      "properties": {
+                        "status": { "type": "string", "example": "valid" },
+                        "expires_at": { "type": "string", "format": "date-time" },
+                        "remaining": { "type": "string", "example": "204d 13h" },
+                        "account": { "type": "string", "example": ".google.com" }
+                      }
+                    },
+                    "sessions": {
+                      "type": "object",
+                      "properties": {
+                        "active": { "type": "integer" },
+                        "max": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ask": {
+      "post": {
+        "tags": ["Query"],
+        "summary": "Send a query to NotebookLM",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                  "query": { "type": "string", "example": "What is the main topic?" },
+                  "notebook": { "type": "string", "description": "Optional. Required for first query if no notebook is set.", "example": "https://notebooklm.google.com/notebook/xxx" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Query response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer" },
+                        "query": { "type": "string" },
+                        "response": { "type": "string" },
+                        "markdown": { "type": "string" },
+                        "duration_ms": { "type": "integer" },
+                        "notebook": { "type": "string" }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "ip": { "type": "string" },
+                        "timestamp": { "type": "string", "format": "date-time" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing notebook or query" },
+          "500": { "description": "Query failed" }
+        }
+      }
+    },
+    "/api/history": {
+      "get": {
+        "tags": ["History"],
+        "summary": "Get conversation history",
+        "description": "Returns conversation history for the current device.",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 }, "description": "Max results (up to 100)" },
+          { "name": "notebook", "in": "query", "schema": { "type": "string" }, "description": "Filter by notebook URL" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conversation history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "query": { "type": "string" },
+                          "response": { "type": "string" },
+                          "markdown": { "type": "string" },
+                          "status": { "type": "string" },
+                          "duration_ms": { "type": "integer" },
+                          "created_at": { "type": "string" },
+                          "completed_at": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/logs": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Get all conversations (admin)",
+        "description": "All conversations across all users.",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 }, "description": "Max results (up to 200)" }
+        ],
+        "responses": {
+          "200": { "description": "All conversation logs" }
+        }
+      }
+    },
+    "/api/notebook": {
+      "get": {
+        "tags": ["Notebook"],
+        "summary": "Get current notebook & profiles",
+        "responses": {
+          "200": {
+            "description": "Current notebook and saved profiles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "current": { "type": "string" },
+                        "currentTitle": { "type": "string" },
+                        "profiles": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "url": { "type": "string" },
+                              "title": { "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Notebook"],
+        "summary": "Add or switch notebook",
+        "description": "Switch to a different notebook. New notebooks are saved as 'Untitled' and the real title is fetched in the background.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url"],
+                "properties": {
+                  "url": { "type": "string", "example": "https://notebooklm.google.com/notebook/xxx" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Notebook switched successfully" },
+          "400": { "description": "Invalid URL" }
+        }
+      },
+      "patch": {
+        "tags": ["Notebook"],
+        "summary": "Update notebook title",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url", "title"],
+                "properties": {
+                  "url": { "type": "string" },
+                  "title": { "type": "string", "example": "My Custom Title" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Title updated" }
+        }
+      },
+      "delete": {
+        "tags": ["Notebook"],
+        "summary": "Delete a notebook profile",
+        "description": "Removes a notebook profile from the sidebar. Chat history is preserved.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url"],
+                "properties": {
+                  "url": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Profile deleted" }
+        }
+      }
+    }
+  }
+}

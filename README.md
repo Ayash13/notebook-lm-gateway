@@ -161,6 +161,13 @@ npx localtunnel --port 3005
 
 ## API Reference
 
+The gateway includes an interactive, premium dark-themed **Swagger API Documentation** portal for exploring and testing the REST API endpoints directly in your browser.
+
+- **Swagger UI Portal:** Visit `/api` (e.g. `http://localhost:3005/api`)
+- **OpenAPI 3.0 Specification:** Served at `/swagger.json`
+
+---
+
 ### `POST /api/ask`
 
 Send a query to NotebookLM.
