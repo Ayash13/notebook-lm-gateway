@@ -133,8 +133,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .nb-act-btn{background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--muted);cursor:pointer;font-size:10px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;outline:none;transition:.2s}
 .nb-act-btn:hover{color:var(--green);border-color:var(--green)}
 .nb-act-btn.del:hover{color:var(--red);border-color:var(--red)}
-.nb-add{border:1px dashed var(--border);background:transparent;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;padding:10px;cursor:pointer;transition:.2s}
-.nb-add:hover{border-color:var(--green);color:var(--green)}
 
 /* Modal */
 .modal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;pointer-events:none}
