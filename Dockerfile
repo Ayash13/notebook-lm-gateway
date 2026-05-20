@@ -6,6 +6,8 @@ RUN npx playwright install --with-deps chromium
 
 WORKDIR /app
 
+RUN mkdir -p data
+
 COPY package*.json ./
 RUN npm ci --omit=dev
 
