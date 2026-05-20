@@ -111,20 +111,38 @@ Open **http://localhost:3005** for the web UI.
 
 ## Docker Deployment
 
+### 1. Local Machine (Push)
+
+First, extract your Google cookies and push the multi-architecture image to Docker Hub.
+
 ```bash
-# 1. Extract cookies locally (requires Chrome on macOS or Windows)
-# This generates auth-state.json and automatically populates the .env file.
+# Extract cookies (generates auth-state.json locally)
 npm run login
 
-# 2. Build and push your image (cross-platform)
+# Build and push your image to Docker Hub
 docker buildx build --platform linux/amd64,linux/arm64 -t your_username/notebook-lm-gateway:latest --push .
-
-# 3. On your VPS: Copy docker-compose.yml and .env, then run:
-docker compose pull
-docker compose up -d
 ```
 
-`AUTH_STATE` is passed into the Docker container securely via the `.env` file instead of being baked into the image. Users are differentiated by their device UUID cookie.
+### 2. VPS (Pull & Run)
+
+On your VPS, you need to securely copy over your `auth-state.json` file and mount it into the container. It is completely isolated and never baked into the image.
+
+```bash
+# Ensure you have copied auth-state.json from your local machine to your VPS directory!
+
+# Run the container with the auth-state.json mounted
+docker run -d \
+  --name nlm-gateway \
+  -p 3005:3005 \
+  -v $(pwd)/auth-state.json:/app/auth-state.json:ro \
+  -v nlm-gateway-db-fresh:/app/data \
+  -e PORT=3005 \
+  -e DB_DIR=/app/data \
+  --restart unless-stopped \
+  your_username/notebook-lm-gateway:latest
+```
+
+> **Note:** Because `auth-state.json` is securely mounted as a read-only volume, the image itself remains safe and credential-free.
 
 ### Expose to Internet
 

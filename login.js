@@ -76,7 +76,5 @@ if (isWin && fs.existsSync(dbToRead)) {
     try { fs.unlinkSync(dbToRead); } catch {}
 }
 
-const authState = { cookies, origins: [] };
-fs.writeFileSync(AUTH_STATE_PATH, JSON.stringify(authState, null, 2));
-fs.writeFileSync(path.join(__dirname, '.env'), `AUTH_STATE=${JSON.stringify(authState)}\n`);
-console.log(`Extracted ${cookies.length} cookies. Saved to ${AUTH_STATE_PATH} and updated .env`);
+fs.writeFileSync(AUTH_STATE_PATH, JSON.stringify({ cookies, origins: [] }, null, 2));
+console.log(`Extracted ${cookies.length} cookies. Saved to ${AUTH_STATE_PATH}`);

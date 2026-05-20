@@ -9,16 +9,8 @@ let browser, context, storageState;
 const sessions = new Map();
 
 async function boot() {
-    let raw;
-    if (process.env.AUTH_STATE) {
-        try { raw = JSON.parse(process.env.AUTH_STATE); } 
-        catch (e) { console.error('Failed to parse AUTH_STATE env var'); process.exit(1); }
-    } else if (fs.existsSync(AUTH_STATE_PATH)) {
-        raw = JSON.parse(fs.readFileSync(AUTH_STATE_PATH, 'utf8'));
-    } else {
-        console.error('Run: node login.js or set AUTH_STATE env var');
-        process.exit(1);
-    }
+    if (!fs.existsSync(AUTH_STATE_PATH)) { console.error('Run: node login.js'); process.exit(1); }
+    const raw = JSON.parse(fs.readFileSync(AUTH_STATE_PATH, 'utf8'));
     const valid = ['Strict', 'Lax', 'None'];
     raw.cookies = raw.cookies.filter(c => c.name && c.value && c.domain).map(c => ({
         ...c, sameSite: valid.includes(c.sameSite) ? c.sameSite : 'Lax', expires: c.expires > 0 ? c.expires : -1

@@ -5,8 +5,7 @@ services:
       - "3005:3005"
     volumes:
       - nlm-gateway-db-fresh:/app/data
-    env_file:
-      - .env
+      - ./auth-state.json:/app/auth-state.json:ro
     environment:
       - PORT=3005
       - DB_DIR=/app/data
