@@ -1,16 +1,23 @@
+version: '3.8'
+
 services:
-  gateway:
-    build: .
+  nlm-gateway:
+    image: ayash13/notebook-lm-gateway:latest
+    container_name: nlm-gateway
     ports:
       - "3005:3005"
-    volumes:
-      - nlm-gateway-db-fresh:/app/data
     environment:
       - PORT=3005
-      - DB_DIR=/app/data
-      - MAX_SESSIONS=${MAX_SESSIONS:-5}
+      - MAX_SESSIONS=5
+    secrets:
+      - auth_state
+    volumes:
+      - nlm-data:/app/data
     restart: unless-stopped
 
+secrets:
+  auth_state:
+    file: ./auth-state.json
+
 volumes:
-  nlm-gateway-db-fresh:
-    name: nlm-gateway-db-fresh
+  nlm-data:
