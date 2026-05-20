@@ -9,7 +9,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-COPY . .
+# Don't copy auth-state.json - use secrets instead
+COPY src ./src
+COPY public ./public
+COPY index.js .
 
 EXPOSE 3005
 
