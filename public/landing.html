@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nlm::gateway — API for NotebookLM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            accent: '#0d9488',
+            'accent-hover': '#0f766e',
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer base {
+      html { scroll-behavior: smooth; }
+      body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+      code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f3f4f6; padding: 2px 6px; color: #0f766e; }
+    }
+    @layer components {
+      .btn-primary { @apply inline-flex items-center gap-1.5 px-5 py-2.5 bg-accent text-white text-sm font-semibold hover:bg-accent-hover transition-colors; }
+      .btn-secondary { @apply inline-flex items-center gap-1.5 px-5 py-2.5 bg-gray-100 text-gray-900 text-sm font-semibold border border-gray-300 hover:bg-gray-200 transition-colors; }
+      .code-block { @apply bg-[#1e1e1e] text-gray-300 font-mono text-sm overflow-x-auto; }
+      .window { @apply bg-[#1a1a1a] shadow-xl max-w-md w-full; }
+    }
+  </style>
+</head>
+<body class="bg-white text-gray-900">
+
+  <!-- Nav -->
+  <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-200">
+    <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <a href="#" class="font-mono font-semibold text-gray-900">nlm::gateway</a>
+      <button id="menuBtn" class="md:hidden flex flex-col gap-[5px] p-1" aria-label="Menu">
+        <span class="block w-[22px] h-[2px] bg-gray-900 transition-transform origin-center"></span>
+        <span class="block w-[22px] h-[2px] bg-gray-900 transition-opacity"></span>
+        <span class="block w-[22px] h-[2px] bg-gray-900 transition-transform origin-center"></span>
+      </button>
+      <div id="menu" class="hidden md:flex items-center gap-7 text-sm font-medium text-gray-500">
+        <a href="#features" class="hover:text-gray-900 transition-colors">Features</a>
+        <a href="#how" class="hover:text-gray-900 transition-colors">How it works</a>
+        <a href="#api" class="hover:text-gray-900 transition-colors">API</a>
+        <a href="/chat" class="hover:text-gray-900 transition-colors">Chat</a>
+        <a href="/api" class="hover:text-gray-900 transition-colors">API Docs</a>
+        <a href="#deploy" class="btn-primary !py-1.5 !px-4">Get started</a>
+      </div>
+    </div>
+    <div id="mobileMenu" class="hidden md:hidden border-t border-gray-200 bg-white px-6 py-4 space-y-3 text-sm font-medium">
+      <a href="#features" class="block text-gray-600 hover:text-gray-900">Features</a>
+      <a href="#how" class="block text-gray-600 hover:text-gray-900">How it works</a>
+      <a href="#api" class="block text-gray-600 hover:text-gray-900">API</a>
+      <a href="/chat" class="block text-gray-600 hover:text-gray-900">Chat</a>
+      <a href="/api" class="block text-gray-600 hover:text-gray-900">API Docs</a>
+      <a href="#deploy" class="block text-accent font-semibold">Get started</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="border-b border-gray-200">
+    <div class="max-w-6xl mx-auto px-6 py-16 md:py-20 grid md:grid-cols-2 gap-10 items-center">
+      <div>
+        <h1 class="text-3xl md:text-[2.6rem] font-extrabold leading-tight tracking-tight mb-4">Use NotebookLM like an API</h1>
+        <p class="text-gray-500 text-base md:text-lg leading-relaxed mb-7 max-w-md">
+          NotebookLM doesn't have a public API. <strong class="text-gray-900">nlm::gateway</strong> fixes that. Run it on your own server, connect your Google account once, and query your notebooks via REST or a simple web chat.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <a href="#deploy" class="btn-primary">Install in 3 steps</a>
+          <a href="https://github.com/Ayash13/notebook-lm-gateway" target="_blank" class="btn-secondary">View on GitHub</a>
+        </div>
+        <div class="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
+          <span>Try it now →</span>
+          <a href="/chat" class="font-mono font-semibold text-accent hover:text-accent-hover transition-colors">/chat</a>
+          <a href="/api" class="font-mono font-semibold text-accent hover:text-accent-hover transition-colors">/api</a>
+        </div>
+      </div>
+      <div class="justify-self-center md:justify-self-end w-full">
+        <div class="window">
+          <div class="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-white/[0.03]">
+            <span class="w-[11px] h-[11px] rounded-full bg-[#ff5f57]"></span>
+            <span class="w-[11px] h-[11px] rounded-full bg-[#febc2e]"></span>
+            <span class="w-[11px] h-[11px] rounded-full bg-[#28c840]"></span>
+            <span class="ml-auto font-mono text-[11px] text-gray-500">Terminal</span>
+          </div>
+          <div class="p-5 font-mono text-[0.8rem] leading-7 text-gray-400">
+            <div class="flex gap-2"><span class="text-emerald-400 font-semibold">❯</span><span class="text-gray-200">GET /health</span></div>
+            <div class="text-gray-500">{ "status": "running", "sessions": 2 }</div>
+            <div class="h-1.5"></div>
+            <div class="flex gap-2"><span class="text-emerald-400 font-semibold">❯</span><span class="text-gray-200">POST /api/ask</span></div>
+            <div class="text-gray-500">{ "response": "Ayash studied at UMY..." }</div>
+            <div class="h-1.5"></div>
+            <div class="flex gap-2"><span class="text-emerald-400 font-semibold">❯</span><span id="cursor" class="w-[7px] h-4 bg-emerald-400 inline-block align-text-bottom"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Features -->
+  <section id="features" class="py-16 md:py-20">
+    <div class="max-w-6xl mx-auto px-6">
+      <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight mb-10">What you get</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="border border-gray-200 p-6 hover:border-gray-300 hover:shadow-sm transition-all">
+          <div class="w-9 h-9 flex items-center justify-center bg-teal-50 text-accent mb-3">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3 class="font-bold text-sm mb-1">REST API</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Send queries as JSON. Get back clean text and markdown. No browser automation needed on your client.</p>
+        </div>
+        <div class="border border-gray-200 p-6 hover:border-gray-300 hover:shadow-sm transition-all">
+          <div class="w-9 h-9 flex items-center justify-center bg-teal-50 text-accent mb-3">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <h3 class="font-bold text-sm mb-1">Web Chat UI</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">A no-install terminal-style chat interface. Switch notebooks, browse history, and see live session status.</p>
+        </div>
+        <div class="border border-gray-200 p-6 hover:border-gray-300 hover:shadow-sm transition-all">
+          <div class="w-9 h-9 flex items-center justify-center bg-teal-50 text-accent mb-3">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          </div>
+          <h3 class="font-bold text-sm mb-1">SQLite persistence</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Every conversation is saved locally per device. History survives restarts. Your data stays on your server.</p>
+        </div>
+        <div class="border border-gray-200 p-6 hover:border-gray-300 hover:shadow-sm transition-all">
+          <div class="w-9 h-9 flex items-center justify-center bg-teal-50 text-accent mb-3">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3 class="font-bold text-sm mb-1">Multi-user isolation</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Each browser gets its own ID and history. Shared server, separate conversations. No login system required.</p>
+        </div>
+        <div class="border border-gray-200 p-6 hover:border-gray-300 hover:shadow-sm transition-all">
+          <div class="w-9 h-9 flex items-center justify-center bg-teal-50 text-accent mb-3">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          </div>
+          <h3 class="font-bold text-sm mb-1">Session pooling</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Pre-warmed Playwright pages mean sub-second responses. LRU eviction keeps memory bounded.</p>
+        </div>
+        <div class="border border-gray-200 p-6 hover:border-gray-300 hover:shadow-sm transition-all">
+          <div class="w-9 h-9 flex items-center justify-center bg-teal-50 text-accent mb-3">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <h3 class="font-bold text-sm mb-1">Docker-ready</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">One <code>docker compose up</code> and you're done. Mount your auth file, and it just works.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how" class="py-16 md:py-20 bg-gray-50 border-y border-gray-200">
+    <div class="max-w-6xl mx-auto px-6">
+      <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight mb-10">How it works</h2>
+      <div class="space-y-4">
+        <div class="bg-white border border-gray-200 p-6 flex gap-5 items-start">
+          <div class="w-9 h-9 flex items-center justify-center bg-gray-900 text-white font-bold text-sm flex-shrink-0">1</div>
+          <div>
+            <h3 class="font-bold text-sm mb-1">Log in once</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">Run <code>npm run login</code>. It reads your Google cookies from Chrome (macOS Keychain or Windows DPAPI) and saves them to <code>auth-state.json</code>. That's your only auth step.</p>
+          </div>
+        </div>
+        <div class="bg-white border border-gray-200 p-6 flex gap-5 items-start">
+          <div class="w-9 h-9 flex items-center justify-center bg-gray-900 text-white font-bold text-sm flex-shrink-0">2</div>
+          <div>
+            <h3 class="font-bold text-sm mb-1">Point to a notebook</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">Paste any NotebookLM URL into the web UI or send it to <code>/api/notebook</code>. The gateway loads the page in a headless browser in the background.</p>
+          </div>
+        </div>
+        <div class="bg-white border border-gray-200 p-6 flex gap-5 items-start">
+          <div class="w-9 h-9 flex items-center justify-center bg-gray-900 text-white font-bold text-sm flex-shrink-0">3</div>
+          <div>
+            <h3 class="font-bold text-sm mb-1">Query away</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">Type a question in the chat or POST to <code>/api/ask</code>. The gateway submits it to NotebookLM, waits for the response, strips citation markers, and returns clean JSON.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- API -->
+  <section id="api" class="py-16 md:py-20">
+    <div class="max-w-6xl mx-auto px-6">
+      <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight mb-2">Built for developers</h2>
+      <p class="text-gray-500 mb-8 max-w-xl">Simple JSON in, structured JSON out. No tokens, no rate-limit dashboards — just your own Google session running on your own hardware.</p>
+
+      <div class="code-block mb-6">
+        <div class="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-white/[0.03]">
+          <span class="font-mono text-[11px] text-gray-500 uppercase tracking-wider">curl</span>
+          <button class="copy-btn text-[11px] font-semibold text-gray-400 bg-white/5 border border-white/10 px-2.5 py-1 hover:bg-white/10 hover:text-white transition-colors">Copy</button>
+        </div>
+        <pre class="p-5 text-[0.8rem] leading-7">curl -X POST http://localhost:3005/api/ask \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Summarize the methodology"}'</pre>
+      </div>
+
+      <h3 class="font-bold text-sm mb-3">Endpoints</h3>
+      <div class="border border-gray-200 divide-y divide-gray-200 text-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-4 px-4 py-3 hover:bg-gray-50 transition-colors">
+          <code class="font-mono text-xs bg-transparent p-0 w-52 flex-shrink-0">GET /health</code>
+          <span class="text-gray-500">Status, sessions, cookie expiry</span>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-4 px-4 py-3 hover:bg-gray-50 transition-colors">
+          <code class="font-mono text-xs bg-transparent p-0 w-52 flex-shrink-0">POST /api/ask</code>
+          <span class="text-gray-500">Send a query, get text + markdown</span>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-4 px-4 py-3 hover:bg-gray-50 transition-colors">
+          <code class="font-mono text-xs bg-transparent p-0 w-52 flex-shrink-0">GET /api/history</code>
+          <span class="text-gray-500">Per-device conversation history</span>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-4 px-4 py-3 hover:bg-gray-50 transition-colors">
+          <code class="font-mono text-xs bg-transparent p-0 w-52 flex-shrink-0">POST /api/notebook</code>
+          <span class="text-gray-500">Set or switch active notebook</span>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-4 px-4 py-3 hover:bg-gray-50 transition-colors">
+          <code class="font-mono text-xs bg-transparent p-0 w-52 flex-shrink-0">PATCH /api/notebook</code>
+          <span class="text-gray-500">Rename a saved notebook</span>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-4 px-4 py-3 hover:bg-gray-50 transition-colors">
+          <code class="font-mono text-xs bg-transparent p-0 w-52 flex-shrink-0">DELETE /api/notebook</code>
+          <span class="text-gray-500">Remove a saved notebook profile</span>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-4 px-4 py-3 hover:bg-gray-50 transition-colors">
+          <code class="font-mono text-xs bg-transparent p-0 w-52 flex-shrink-0">GET /api</code>
+          <span class="text-gray-500">Swagger UI docs</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Deploy -->
+  <section id="deploy" class="py-16 md:py-20 bg-gray-50 border-y border-gray-200">
+    <div class="max-w-6xl mx-auto px-6">
+      <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight mb-2">Get started</h2>
+      <p class="text-gray-500 mb-8">Clone, log in, and run. Or use Docker.</p>
+
+      <div class="code-block mb-4">
+        <div class="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-white/[0.03]">
+          <span class="font-mono text-[11px] text-gray-500 uppercase tracking-wider">npm</span>
+          <button class="copy-btn text-[11px] font-semibold text-gray-400 bg-white/5 border border-white/10 px-2.5 py-1 hover:bg-white/10 hover:text-white transition-colors">Copy</button>
+        </div>
+        <pre class="p-5 text-[0.8rem] leading-7">git clone https://github.com/Ayash13/notebook-lm-gateway.git
+cd notebook-lm-gateway
+npm install
+npm run login   # one-time cookie extraction
+npm start       # http://localhost:3005</pre>
+      </div>
+
+      <div class="code-block mb-8">
+        <div class="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-white/[0.03]">
+          <span class="font-mono text-[11px] text-gray-500 uppercase tracking-wider">docker</span>
+          <button class="copy-btn text-[11px] font-semibold text-gray-400 bg-white/5 border border-white/10 px-2.5 py-1 hover:bg-white/10 hover:text-white transition-colors">Copy</button>
+        </div>
+        <pre class="p-5 text-[0.8rem] leading-7">docker run -d \
+  --name nlm-gateway \
+  -p 3005:3005 \
+  -v $(pwd)/auth-state.json:/app/auth-state.json:ro \
+  -v nlm-gateway-db:/app/data \
+  -e PORT=3005 \
+  -e DB_DIR=/app/data \
+  --restart unless-stopped \
+  ayash13/notebook-lm-gateway:latest</pre>
+      </div>
+
+      <h3 class="font-bold text-sm mb-3">Expose to the internet</h3>
+      <div class="bg-gray-100 border border-gray-200 font-mono text-sm p-5 text-gray-700 leading-7">
+        ngrok http --domain=your-domain.ngrok-free.app 3005
+cloudflared tunnel --url localhost:3005
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-8 text-center text-sm text-gray-400">
+    <div class="max-w-6xl mx-auto px-6">
+      <strong class="text-gray-700">nlm::gateway</strong> — open source under MIT.
+      <a href="https://github.com/Ayash13/notebook-lm-gateway" target="_blank" class="text-accent font-semibold hover:underline ml-1">GitHub</a>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu
+    const menuBtn = document.getElementById('menuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const spans = menuBtn.querySelectorAll('span');
+    menuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+      if (!mobileMenu.classList.contains('hidden')) {
+        spans[0].style.transform = 'translateY(7px) rotate(45deg)';
+        spans[1].style.opacity = '0';
+        spans[2].style.transform = 'translateY(-7px) rotate(-45deg)';
+      } else {
+        spans[0].style.transform = '';
+        spans[1].style.opacity = '';
+        spans[2].style.transform = '';
+      }
+    });
+
+    // Smooth scroll + close menu
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        const id = a.getAttribute('href');
+        if (id === '#') return;
+        const target = document.querySelector(id);
+        if (target) {
+          e.preventDefault();
+          const y = target.getBoundingClientRect().top + window.pageYOffset - 70;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+          mobileMenu.classList.add('hidden');
+          spans[0].style.transform = '';
+          spans[1].style.opacity = '';
+          spans[2].style.transform = '';
+        }
+      });
+    });
+
+    // Copy buttons
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const code = btn.closest('.code-block')?.querySelector('pre');
+        if (!code) return;
+        try {
+          await navigator.clipboard.writeText(code.innerText);
+          btn.textContent = 'Copied';
+          btn.style.color = '#5af7a8';
+          btn.style.borderColor = 'rgba(90,247,168,0.3)';
+          setTimeout(() => { btn.textContent = 'Copy'; btn.style.color = ''; btn.style.borderColor = ''; }, 1500);
+        } catch {
+          btn.textContent = 'Failed';
+          setTimeout(() => btn.textContent = 'Copy', 1500);
+        }
+      });
+    });
+
+    // Cursor blink
+    const cursor = document.getElementById('cursor');
+    if (cursor) setInterval(() => { cursor.style.opacity = cursor.style.opacity === '0' ? '1' : '0'; }, 530);
+  </script>
+</body>
+</html>

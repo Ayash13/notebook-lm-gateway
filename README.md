@@ -1,6 +1,8 @@
 # nlm::gateway
 
 > Headless API gateway for [NotebookLM](https://notebooklm.google.com) — query your notebooks programmatically via REST API or a terminal-themed web UI.
+>
+> **`/`** Landing page &bull; **`/chat`** Web chat UI &bull; **`/api`** Swagger docs
 
 ---
 
@@ -62,7 +64,7 @@
 │   ├── api/           # Express REST controllers (routes.js)
 │   ├── auth/          # OS-specific DPAPI/Keychain decryption (mac.js, win.js)
 │   └── core/          # Playwright engine (browser.js) & SQLite (db.js)
-└── public/            # Decoupled frontend (index.html, style.css, app.js)
+└── public/            # Decoupled frontend (landing, chat, static assets)
 ```
 
 ### Request Flow
@@ -105,7 +107,7 @@ npm run login
 npm start
 ```
 
-Open **http://localhost:3005** for the web UI.
+Open **http://localhost:3005** for the landing page, or go straight to **http://localhost:3005/chat** for the web chat UI.
 
 ---
 
@@ -161,10 +163,14 @@ npx localtunnel --port 3005
 
 ## API Reference
 
-The gateway includes an interactive, premium dark-themed **Swagger API Documentation** portal for exploring and testing the REST API endpoints directly in your browser.
+The gateway includes an interactive **Swagger API Documentation** portal for exploring and testing the REST API endpoints directly in your browser.
 
-- **Swagger UI Portal:** Visit `/api` (e.g. `http://localhost:3005/api`)
-- **OpenAPI 3.0 Specification:** Served at `/swagger.json`
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page with features, setup guide, and links |
+| `/chat` | Terminal-themed web chat interface |
+| `/api` | Swagger UI docs |
+| `/swagger.json` | OpenAPI 3.0 specification |
 
 ---
 
@@ -323,14 +329,16 @@ Server status, active sessions, and Google cookie expiry.
 
 ## Web UI
 
-Terminal-themed interface with:
+The app serves two frontend pages:
 
-- **JetBrains Mono** font, green-on-dark color scheme
-- **Chat feed** with `❯ query` / `◆ response` terminal prompts
-- **Sidebar** — notebook URL switcher, conversation history, session expiry
-- **Mobile responsive** — hamburger menu with slide-out sidebar
-- **Per-device history** — each browser sees only its own conversations
-- **Live status** — connection indicator, auth expiry countdown
+- **`/`** — Landing page with feature overview, setup instructions, and navigation
+- **`/chat`** — Terminal-themed chat interface with:
+  - **JetBrains Mono** font, green-on-dark color scheme
+  - **Chat feed** with `❯ query` / `◆ response` terminal prompts
+  - **Sidebar** — notebook URL switcher, conversation history, session expiry
+  - **Mobile responsive** — hamburger menu with slide-out sidebar
+  - **Per-device history** — each browser sees only its own conversations
+  - **Live status** — connection indicator, auth expiry countdown
 
 ---
 
@@ -397,27 +405,36 @@ CREATE TABLE IF NOT EXISTS saved_notebooks (
 
 ```
 notebook-lm-gateway/
-├── index.js                 # Express server, Playwright session pool, API routes
+├── index.js                 # Express server entry point with page routes
 ├── login.js                 # Chrome cookie extractor (macOS Keychain decryption)
 ├── public/
-│   └── index.html           # Terminal-themed web UI (single-file, no build step)
+│   ├── landing.html         # Landing page (served at /)
+│   ├── chat.html            # Terminal-themed chat UI (served at /chat)
+│   ├── app.js               # Chat UI logic
+│   ├── style.css            # Chat UI styles
+│   └── swagger.json         # OpenAPI 3.0 spec (served at /swagger.json)
+├── src/
+│   ├── api/routes.js        # REST API routes + Swagger UI (/api)
+│   ├── auth/                # OS-specific cookie decryption
+│   └── core/                # Playwright engine + SQLite
 ├── Dockerfile               # Node 20 slim + Playwright Chromium + build tools
 ├── docker-compose.yml       # Production config with persistent volume
 ├── .dockerignore            # Excludes node_modules, .git, gateway.db
 ├── .gitignore               # Excludes node_modules, auth-state.json, gateway.db
 ├── package.json             # Dependencies: express, playwright, better-sqlite3, cors
-├── postman_collection.json  # Postman collection for API testing
 ├── auth-state.json          # Google cookies (generated, gitignored)
 └── gateway.db               # SQLite database (auto-created, gitignored)
 ```
 
 ### Key Components
 
-| File                | Role                                                                                                                                                             |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.js`          | Express server with cookie-based device identity, Playwright page pool (LRU, max 5), query queue with serialized execution, HTML→markdown parser, session warmup |
-| `login.js`          | Extracts Google cookies from Chrome's SQLite DB, decrypts via macOS Keychain (AES-128-CBC) or Windows DPAPI (AES-256-GCM), exports Playwright-compatible state   |
-| `public/index.html` | Single-file terminal UI — JetBrains Mono, WebSocket-free, vanilla JS, responsive sidebar, history replay, session expiry panel                                   |
+| File                  | Role                                                                                                                                                             |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.js`            | Express server with page routes (`/`, `/chat`), cookie-based device identity, static middleware                                                                  |
+| `login.js`            | Extracts Google cookies from Chrome's SQLite DB, decrypts via macOS Keychain (AES-128-CBC) or Windows DPAPI (AES-256-GCM), exports Playwright-compatible state   |
+| `public/landing.html` | Landing page — features, setup guide, and navigation links to Chat and API Docs                                                                                  |
+| `public/chat.html`    | Terminal-themed chat UI — JetBrains Mono, vanilla JS, responsive sidebar, history replay, session expiry panel                                                   |
+| `src/api/routes.js`   | REST API routes, Swagger UI at `/api`, Playwright page pool (LRU, max 5), query queue with serialized execution                                                 |
 
 ---
 
