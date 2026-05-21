@@ -25,6 +25,17 @@ async function boot() {
         storageState, userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
         viewport: { width: 1280, height: 800 }
     });
+
+    await context.route('**/*', route => {
+        const type = route.request().resourceType();
+        const url = route.request().url();
+        if (['image', 'media', 'font'].includes(type) || url.includes('play.google.com/log') || url.includes('google-analytics')) {
+            route.abort();
+        } else {
+            route.continue();
+        }
+    });
+
     console.log('[ready] browser initialized');
 }
 
@@ -36,7 +47,7 @@ async function shutdown() {
 async function createPage(notebookUrl) {
     try {
         const page = await context.newPage();
-        await page.goto(notebookUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+        await page.goto(notebookUrl, { waitUntil: 'commit', timeout: 60_000 });
         await page.waitForSelector('textarea.query-box-input', { timeout: 60_000 });
         let rawTitle = await page.textContent('.title-label-inner').catch(() => null);
         const title = rawTitle ? cleanText(rawTitle) : 'Unknown Notebook';
@@ -46,7 +57,7 @@ async function createPage(notebookUrl) {
             console.error('[playwright crash] Rebooting browser...');
             await boot();
             const page = await context.newPage();
-            await page.goto(notebookUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+            await page.goto(notebookUrl, { waitUntil: 'commit', timeout: 60_000 });
             await page.waitForSelector('textarea.query-box-input', { timeout: 60_000 });
             let rawTitle = await page.textContent('.title-label-inner').catch(() => null);
             const title = rawTitle ? cleanText(rawTitle) : 'Unknown Notebook';
@@ -87,7 +98,7 @@ function parseMarkdown(html) {
 async function sendQuery(page, query) {
     const count = await page.locator('.chat-message-pair').count();
     await page.locator('textarea.query-box-input').fill(query);
-    await page.locator('button.submit-button').click();
+    await page.locator('button.submit-button').click({ force: true });
     await page.waitForFunction(c => document.querySelectorAll('.chat-message-pair').length > c, count, { timeout: 120_000 });
     const latest = page.locator('.chat-message-pair').last();
     const content = latest.locator('.to-user-container .message-text-content');

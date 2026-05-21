@@ -21,12 +21,16 @@ app.get('/chat', async (req, res) => { await res.sendFile('chat.html', { root: p
 // Static assets (CSS, JS, swagger.json)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Assign each browser a unique ID via cookie
+// Assign each browser a unique ID via cookie, fallback to IP for stateless API clients (e.g. cURL, Swagger)
 app.use((req, res, next) => {
-    let uid = req.headers.cookie?.match(/nlm_uid=([^;]+)/)?.[1];
+    let uid = req.headers['x-device-id'] || req.headers.cookie?.match(/nlm_uid=([^;]+)/)?.[1];
     if (!uid) {
-        uid = crypto.randomUUID();
-        res.setHeader('Set-Cookie', `nlm_uid=${uid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000`);
+        if (req.path === '/' || req.path === '/chat') {
+            uid = crypto.randomUUID();
+            res.setHeader('Set-Cookie', `nlm_uid=${uid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000`);
+        } else {
+            uid = req.ip || 'api-default';
+        }
     }
     req.clientId = uid;
     next();
