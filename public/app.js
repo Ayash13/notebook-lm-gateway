@@ -42,7 +42,7 @@ async function health(){
             }
             if(!hasCheckedInitial){hasCheckedInitial=true;loadHist()}
         } else {
-            document.getElementById('setupModal').style.display='flex';
+            openModal('setupModal');
             hasCheckedInitial=true;
         }
     }catch{
@@ -202,6 +202,13 @@ function closeModal(id) {
     const m = document.getElementById(id);
     m.classList.remove('active');
     setTimeout(() => { m.style.display = 'none'; }, 200);
+}
+function closeSetupModal() {
+    if (!nb) {
+        toast('A notebook URL is required to continue', 'err');
+        return;
+    }
+    closeModal('setupModal');
 }
 function clearChat(){document.getElementById('feed').innerHTML='';renderHist()}
 function toast(m,t){const e=document.createElement('div');e.className=`toast ${t}`;e.textContent='> '+m;document.body.appendChild(e);setTimeout(()=>e.remove(),3000)}

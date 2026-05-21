@@ -59,16 +59,16 @@
 
 <!-- Modal: Add Notebook -->
 <div class="modal" id="setupModal">
-    <div class="modal-overlay" onclick="closeModal('setupModal')"></div>
+    <div class="modal-overlay" onclick="closeSetupModal()"></div>
     <div class="modal-content">
         <div class="modal-header">
             <h2>Add Notebook</h2>
-            <button class="modal-close" onclick="closeModal('setupModal')">×</button>
+            <button class="modal-close" onclick="closeSetupModal()">×</button>
         </div>
         <p>Paste the full URL of your NotebookLM notebook to connect.</p>
         <input type="text" id="setupUrl" placeholder="https://notebooklm.google.com/notebook/..." onkeydown="if(event.key==='Enter')saveSetup()">
         <div class="modal-actions">
-            <button class="btn-secondary" onclick="closeModal('setupModal')">Cancel</button>
+            <button class="btn-secondary" onclick="closeSetupModal()">Cancel</button>
             <button class="btn-primary" onclick="saveSetup()">Connect</button>
         </div>
     </div>
