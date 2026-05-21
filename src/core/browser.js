@@ -20,7 +20,19 @@ async function boot() {
         ...c, sameSite: valid.includes(c.sameSite) ? c.sameSite : 'Lax', expires: c.expires > 0 ? c.expires : -1
     }));
     storageState = raw;
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ 
+        headless: true,
+        args: [
+            '--disable-gpu',
+            '--disable-dev-shm-usage',
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-extensions',
+            '--disable-web-security',
+            '--disable-features=IsolateOrigins,site-per-process',
+            '--blink-settings=imagesEnabled=false'
+        ]
+    });
     context = await browser.newContext({
         storageState, userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
         viewport: { width: 1280, height: 800 }
@@ -98,10 +110,15 @@ function parseMarkdown(html) {
 async function sendQuery(page, query) {
     const count = await page.locator('.chat-message-pair').count();
     await page.locator('textarea.query-box-input').fill(query);
-    await page.locator('button.submit-button').click({ force: true });
+    
+    // Pressing Enter is slightly faster and bypasses any Angular UI button animations
+    await page.keyboard.press('Enter');
+    
     await page.waitForFunction(c => document.querySelectorAll('.chat-message-pair').length > c, count, { timeout: 120_000 });
     const latest = page.locator('.chat-message-pair').last();
     const content = latest.locator('.to-user-container .message-text-content');
+    
+    // Wait for the LLM to finish streaming its text
     await latest.locator('.message-actions').waitFor({ state: 'visible', timeout: 120_000 });
     
     // Remove citation markers from the DOM

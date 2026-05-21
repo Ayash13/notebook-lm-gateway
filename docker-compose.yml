@@ -1,5 +1,6 @@
 services:
   gateway:
+    build: .
     image: ayash13/notebook-lm-gateway:latest
     ports:
       - "3005:3005"

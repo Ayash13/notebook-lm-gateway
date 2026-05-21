@@ -104,7 +104,7 @@ router.post('/api/ask', async (req, res) => {
         const data = await browser.enqueue(s, query);
         const dur = Date.now() - start;
         db.stmtComplete.run(data.text, data.markdown, dur, id);
-        res.json({ success: true, data: { id: Number(id), query, response: data.text, markdown: data.markdown, duration_ms: dur, notebook: nb }, meta: { ip, timestamp: new Date().toISOString() } });
+        res.json({ success: true, data: { id: Number(id), query, response: data.text, markdown: data.markdown, duration_ms: dur, notebook: nb, notebook_title: s.title }, meta: { ip, timestamp: new Date().toISOString() } });
     } catch (e) {
         db.stmtFail.run(e.message, id);
         res.status(500).json({ success: false, error: { code: 'QUERY_FAILED', message: e.message } });
