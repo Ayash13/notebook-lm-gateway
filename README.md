@@ -130,16 +130,13 @@ docker buildx build --platform linux/amd64,linux/arm64 -t your_username/notebook
 
 ### 2. VPS (Pull & Run)
 
-On your VPS, you need to securely copy over your `auth-state.json` file and mount it into the container. It is completely isolated and never baked into the image.
+Since your `auth-state.json` is baked directly into the Docker image, you can simply run it on your VPS. Make sure your Docker registry is private to keep your cookies secure.
 
 ```bash
-# Ensure you have copied auth-state.json from your local machine to your VPS directory!
-
-# Run the container with the auth-state.json mounted
+# Run the container
 docker run -d \
   --name nlm-gateway \
   -p 3005:3005 \
-  -v $(pwd)/auth-state.json:/app/auth-state.json:ro \
   -v nlm-gateway-db-fresh:/app/data \
   -e PORT=3005 \
   -e DB_DIR=/app/data \
@@ -147,7 +144,7 @@ docker run -d \
   your_username/notebook-lm-gateway:latest
 ```
 
-> **Note:** Because `auth-state.json` is securely mounted as a read-only volume, the image itself remains safe and credential-free.
+> **Note:** Because `auth-state.json` is baked into the image, ensure you only push this image to a private Docker Hub repository to keep your credentials safe.
 
 ### Expose to Internet
 
