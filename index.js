@@ -14,8 +14,9 @@ app.use(express.json());
 app.set('trust proxy', true);
 
 // Pages
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
-app.get('/chat', (req, res) => res.sendFile(path.join(__dirname, 'public', 'chat.html')));
+const publicDir = path.join(__dirname, 'public');
+app.get('/', async (req, res) => { await res.sendFile('landing.html', { root: publicDir }); });
+app.get('/chat', async (req, res) => { await res.sendFile('chat.html', { root: publicDir }); });
 
 // Static assets (CSS, JS, swagger.json)
 app.use(express.static(path.join(__dirname, 'public')));
