@@ -100,8 +100,11 @@ git clone https://github.com/Ayash13/notebook-lm-gateway.git
 cd notebook-lm-gateway
 npm install
 
-# Extract Google cookies from Chrome (one-time, no restart needed)
+# Extract Google cookies from Chrome (one-time, defaults to "Default" profile)
 npm run login
+
+# Or specify a custom Chrome profile (e.g., "Profile 1")
+node login.js --profile="Profile 1"
 
 # Start the gateway
 npm start
