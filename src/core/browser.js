@@ -38,7 +38,8 @@ async function createPage(notebookUrl) {
         const page = await context.newPage();
         await page.goto(notebookUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
         await page.waitForSelector('textarea.query-box-input', { timeout: 60_000 });
-        const title = await page.textContent('.title-label-inner').catch(() => null) || 'Unknown Notebook';
+        let rawTitle = await page.textContent('.title-label-inner').catch(() => null);
+        const title = rawTitle ? cleanText(rawTitle) : 'Unknown Notebook';
         return { page, title };
     } catch (e) {
         if (e.message.includes('browser has been closed') || e.message.includes('Target page')) {
@@ -47,7 +48,8 @@ async function createPage(notebookUrl) {
             const page = await context.newPage();
             await page.goto(notebookUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 });
             await page.waitForSelector('textarea.query-box-input', { timeout: 60_000 });
-            const title = await page.textContent('.title-label-inner').catch(() => null) || 'Unknown Notebook';
+            let rawTitle = await page.textContent('.title-label-inner').catch(() => null);
+            const title = rawTitle ? cleanText(rawTitle) : 'Unknown Notebook';
             return { page, title };
         }
         throw e;
