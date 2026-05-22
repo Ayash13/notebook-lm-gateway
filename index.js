@@ -13,13 +13,18 @@ app.use(cors());
 app.use(express.json());
 app.set('trust proxy', true);
 
-// Pages
-const publicDir = path.join(__dirname, 'public');
-app.get('/', async (req, res) => { await res.sendFile('landing.html', { root: publicDir }); });
-app.get('/chat', async (req, res) => { await res.sendFile('chat.html', { root: publicDir }); });
+const ENABLE_CHAT_UI = process.env.ENABLE_CHAT_UI !== 'false';
 
-// Static assets (CSS, JS, swagger.json)
-app.use(express.static(path.join(__dirname, 'public')));
+// Pages & UI
+if (ENABLE_CHAT_UI) {
+    const publicDir = path.join(__dirname, 'public');
+    app.get('/', async (req, res) => { await res.sendFile('landing.html', { root: publicDir }); });
+    app.get('/chat', async (req, res) => { await res.sendFile('chat.html', { root: publicDir }); });
+    app.use(express.static(path.join(__dirname, 'public')));
+} else {
+    app.get('/', (req, res) => res.json({ status: 'running', message: 'nlm::gateway API is active. Chat UI is disabled by administrator.' }));
+    app.get('/chat', (req, res) => res.status(403).json({ error: 'Chat UI is disabled.' }));
+}
 
 // Assign each browser a unique ID via cookie, fallback to IP for stateless API clients (e.g. cURL, Swagger)
 app.use((req, res, next) => {

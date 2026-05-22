@@ -10,6 +10,7 @@ services:
       - PORT=3005
       - DB_DIR=/app/data
       - MAX_SESSIONS=${MAX_SESSIONS:-5}
+      - ENABLE_CHAT_UI=${ENABLE_CHAT_UI:-true}
     restart: unless-stopped
 
 volumes:
